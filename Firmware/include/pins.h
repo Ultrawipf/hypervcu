@@ -19,10 +19,12 @@
 #define LED_REAR_EN 48
 #define LED_EN 46 // Power regulator enable (input)
 
-#define VESC_TX 1 //uart0
-#define VESC_RX 3
+#define VESC_TX 43 //uart0
+#define VESC_RX 44
 #define VESC_UARTNUM 0
 #define VESC_SERIAL Serial0
+#define VESC_EN 38
+#define VESC_EN_MODE OUTPUT
 
 #define DISP_TX 17
 #define DISP_RX 18

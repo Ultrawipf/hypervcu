@@ -1,8 +1,14 @@
 #ifndef vcu_H_
 #define vcu_H_
 #include "Arduino.h"
+#include "jbd_bms.h"
+#include "VescUart.h"
+#include "pins.h"
+#include "fingerprint.h"
 
 
+#define VCUERR_LOCKED 0x01
+#define VCUERR_DISCONNECTED 0x06
 
 // Interface for scooter/bike screens
 class VehicleControls{
@@ -13,48 +19,167 @@ public:
         bool light;
         bool brake;
         uint8_t indicators;
-        bool errors;
+        bool warning;
+        uint8_t errors;
     };
 
     struct ControlState{
-        float throttle = 0;
+        float throttle = 0; // Range 0 - 1.0
         uint8_t mode = 0;
+        uint8_t specialmode = 0; // walk mode
         uint8_t indicators = 0;
+        uint8_t light = 0;
+        uint8_t brake = 0;
+        bool connected = false;
     };
 
     VehicleControls();
+    static TaskHandle_t* taskHandle;
+    static VehicleControls* instance;
+    
+    static void run();
+    static void taskFuncStatic(void * pvParameters);
 
-    // void setSpeed(float kmh);
-    // void setBattery(uint8_t pct);
-    // void setLightState();
-    virtual void sendState() = 0;
+    virtual bool setup();
+
     virtual ControlState getControls() = 0;
+    virtual BMS* getBMS(){return nullptr;};
 
-    ControlState currentControls;
     DisplayState currentDisplay;
+protected:
+    virtual void task(void * pvParameters);
+    ControlState currentControls;
+    
 };
 
-class T6E : public VehicleControls{
-    T6E();
 
-    void sendState() override;
-    ControlState getControls() override;
-};
 
 class VCU{
-public:
-    VCU(VehicleControls& controls);
-    // ~VCU();
-    TaskHandle_t* taskHandle = 0;
+    static constexpr TickType_t interval = 25;
+    struct LightEffect{ // todo general effects
+        uint8_t counter = 0;
+        uint8_t period = 0;
+    };
+    struct LightState{
+        bool overrideLights = false;
 
-    void task(void * pvParameters);
-    // void start();
+        uint8_t front = false;
+        uint8_t rear = false;
+        uint8_t brake = false;
+        uint8_t indl = false;
+        uint8_t indr = false;
+        // fx counters?
+
+        uint8_t indicatorPeriod = 500 / interval;
+        uint8_t indicatorCounter = 0;
+    };
+
+    struct DriveMode{
+        float maxCurrent;
+        float maxSpeed;
+        bool currentMode;
+        // float maxAccel = 0;
+        // float curveScale = 0;
+    };
+public:
+    VCU(VehicleControls& controls,FingerprintReader* fingerprint = nullptr);
+    // ~VCU();
+    static TaskHandle_t* taskHandle;
+    static VCU* instance;
+    
+    static void run();
+    static void taskFuncStatic(void * pvParameters);
+
+    void setupVesc();
+
+    void updateLights();
+    void updateDisplayState();
     // void setLights();
-    // void updateMotor();
+    void updateMotor();
+    float calcSpeedScale(float wheelDiam,int poles);
+
+    void setLocked(bool locked);
+    void changeDriveMode(DriveMode* mode);
+    void updateDriveMode(VehicleControls::ControlState& newControls,uint8_t submode = 0);
     bool running = false;
-    const TickType_t interval = 50;
+    bool vescOk = false;
+    bool locked = false;
+
+    float brakeCurrent = 0;
+    float lockCurrent = 10;
+
+    float speedPIDscale = 0.001;
+    float lastSpeed = 0;
+    float speedP = 400, speedI = 5, speedD = 400;
+    double speedPv = 0, speedIv = 0, speedDv = 0;
+    double speedIlim = 1000,speedIlimneg = -100;
+
+    void fpCb(int finger);
+
+    static constexpr uint8_t NUMDRIVEMODES = 3;
+
+    bool masterMode = false;
+
+    DriveMode driveModes[2][NUMDRIVEMODES] = { // Make define length. driveMode is mode -1. Mode 0 is off.
+        {
+            {
+                .maxCurrent = 10,
+                .maxSpeed = 10,
+                .currentMode = false
+            },
+            {
+                .maxCurrent = 10,
+                .maxSpeed = 15,
+                .currentMode = false
+            },
+            {
+                .maxCurrent = 30,
+                .maxSpeed = 21,
+                .currentMode = false
+            }
+        },
+        {
+            {
+                .maxCurrent = 10,
+                .maxSpeed = 15,
+                .currentMode = true
+            },
+            {
+                .maxCurrent = 25,
+                .maxSpeed = 25,
+                .currentMode = true
+            },
+            {
+                .maxCurrent = 40,
+                .maxSpeed = 40,
+                .currentMode = true
+            }
+        }
+    };
+    DriveMode* curDriveMode = nullptr;
 
     VehicleControls& controls;
+    VescUart vesc;
+    FingerprintReader* fingerprint;
+    // mc_configuration vescconf;
+
+protected:
+    void task(void * pvParameters);
+    LightState curLightState;
+    VehicleControls::ControlState curControlState;
+    VehicleControls::ControlState lastControlState;
+
+    packBasicInfoStruct curBmsdata;
+
+    bool directMode = true;
+    // float maxCurrent = 10;
+    uint8_t poles = 30;
+    float wheelDiamMM = 250;
+    float rpmToKmh = 0;
+
+    const uint8_t vescValUpdInterval = 4;
+    uint8_t vescValUpdCnt = 0;
+    float curSpeedKmh = 0;
 };
 
 

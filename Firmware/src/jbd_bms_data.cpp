@@ -72,7 +72,7 @@ bool processBasicInfo(packBasicInfoStruct *output, byte *data, unsigned int data
     output->Watts = output->Volts * output->Amps / 1000000; // W
     output->FullCapacity = ((uint16_t)two_ints_into16(data[6], data[7]));
     // output->CapacityRemainAh = ((uint16_t)two_ints_into16(data[4], data[5])) * 10;
-    output->CapacityRemainAh = ((uint16_t)output->FullCapacity * output->CapacityRemainPercent / 100);
+    output->CapacityRemainAh = ((float)output->FullCapacity * (float)output->CapacityRemainPercent / 100.0f);
 
     output->Cycles = ((uint16_t)two_ints_into16(data[8], data[9]));
 

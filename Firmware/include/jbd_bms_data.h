@@ -65,10 +65,9 @@ struct packEepromStruct
 
 
 
-// Color definitions for 64k color mode
-// Bits 0..4 -> Blue 0..4
-// Bits 5..10 -> Green 0..5
-// Bits 11..15 -> Red 0..4
+extern packBasicInfoStruct packBasicInfo; // structures for BMS data
+extern packCellInfoStruct packCellInfo;   // structures for BMS data
+
 
 // Functions
 

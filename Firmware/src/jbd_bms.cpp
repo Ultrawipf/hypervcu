@@ -13,11 +13,12 @@ static constexpr uint32_t scanTimeMs = 5 * 1000;
 
 NimBLEAddress bmsClientAddr;
 bool bmsSubscribed = false;
-
+bool bmsWaiting = false;
 
 void bmsNotifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
     // Process bms packet
     bleCollectPacket((char*)pData, length);
+    bmsWaiting = false;
 }
 
 bool subscribeBms(const NimBLEAddress bmsClientAddr){
@@ -74,7 +75,7 @@ bool requestBmsState(NimBLEAddress bmsClientAddr, bool requestCellInfo)
     }
     else
     {
-        DBG_SERIAL.println(pClient->getPeerAddress().toString().c_str());
+        // DBG_SERIAL.println(pClient->getPeerAddress().toString().c_str());
 
         NimBLERemoteService *pSvc = nullptr;
         NimBLERemoteCharacteristic *pChr = nullptr;
@@ -85,6 +86,7 @@ bool requestBmsState(NimBLEAddress bmsClientAddr, bool requestCellInfo)
             pChr = pSvc->getCharacteristic(charUUID_tx_BMS);
             if (pChr->canWriteNoResponse())
             {
+                bmsWaiting = true;
                 uint8_t bmsBasicInfoReq[7] = {0xdd, 0xa5, 0x3, 0x0, 0xff, 0xfd, 0x77}; // Basic info
                 if (!pChr->writeValue(bmsBasicInfoReq, sizeof(bmsBasicInfoReq), true))
                 {
@@ -165,11 +167,13 @@ void jbdBmsTask(void * pvParameters){
         if(!bmsClientAddr.isNull()){
             // DBG_SERIAL.printf("We are connected\n");
             if(!bmsSubscribed){
-                subscribeBms(bmsClientAddr);
+                if(!subscribeBms(bmsClientAddr)){
+                    NimBLEDevice::getScan()->start(scanTimeMs,false,false);
+                }
             }else{
-                requestBmsState(bmsClientAddr,false);
+                requestBmsState(bmsClientAddr,true);
                 // printCellInfo();
-                printBasicInfo();
+                // printBasicInfo();
             }
         }
     }
@@ -187,17 +191,36 @@ void setupBms() {
     pScan->setWindow(45);
     pScan->setActiveScan(true);
     pScan->start(scanTimeMs);
+}
 
-
-        //     auto pClients = NimBLEDevice::getConnectedClients();
-        // if (!pClients.size()) {
-        //     DBG_SERIAL.printf("No clients. Start scan\n");
-        //     NimBLEDevice::getScan()->start(scanTimeMs);
-            
-        //     continue;
-        // }
+BMS::BMS(){
 
 }
+
+packBasicInfoStruct BMS::getBmsBasicData(bool update){
+    if(update){
+        requestBmsState(bmsClientAddr,false);
+        while(bmsWaiting){
+            vTaskDelay(10);
+        }
+    }
+    return packBasicInfo;
+}
+
+packCellInfoStruct BMS::getBmsCellData(bool update){
+    if(update){
+        requestBmsState(bmsClientAddr,true);
+         while(bmsWaiting){
+            vTaskDelay(10);
+        }
+    }
+    return packCellInfo;
+}
+
+bool BMS::getBmsConnected(){
+    return bmsSubscribed;
+}
+
 
 // void loop() {
     
