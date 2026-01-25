@@ -101,34 +101,46 @@ public:
     void setLocked(bool locked);
     void changeDriveMode(DriveMode* mode);
     void updateDriveMode(VehicleControls::ControlState& newControls,uint8_t submode = 0);
+
+    void saveSettings();
+    void loadSettings();
+
     bool running = false;
     bool vescOk = false;
     bool locked = false;
 
     float brakeCurrent = 0;
+    float offThrottleBrake = 0;
     float lockCurrent = 10;
+    float idleCurrent = 0.05f; // Current when coasting with throttle >0
 
-    float speedPIDscale = 0.001;
+    float speedPIDscale = 0.01;
     float lastSpeed = 0;
-    float speedP = 400, speedI = 5, speedD = 400;
+    float lastCurrent = 0; // Previous requested motor current
+    float speedP = 40, speedI = 5, speedD = 30;
     double speedPv = 0, speedIv = 0, speedDv = 0;
-    double speedIlim = 1000,speedIlimneg = -100;
+    double speedIlim = 5000,speedIlimneg = -100;
 
     void fpCb(int finger);
 
     static constexpr uint8_t NUMDRIVEMODES = 3;
+    static constexpr uint8_t NUMDRIVESUBMODES = 2;
 
     bool masterMode = false;
+    bool zerostart = false;
+    float minspeed = 2.0f; // Min non-zerostart speed. Also considered idle when below this speed. 
+    float minspeedAlarm = 0.5f; // When locked flash indicators if pushed faster than this speed
 
-    DriveMode driveModes[2][NUMDRIVEMODES] = { // Make define length. driveMode is mode -1. Mode 0 is off.
+
+    DriveMode driveModes[NUMDRIVESUBMODES][NUMDRIVEMODES] = { // Make define length. driveMode is mode -1. Mode 0 is off.
         {
             {
-                .maxCurrent = 10,
+                .maxCurrent = 20,
                 .maxSpeed = 10,
                 .currentMode = false
             },
             {
-                .maxCurrent = 10,
+                .maxCurrent = 30,
                 .maxSpeed = 15,
                 .currentMode = false
             },
@@ -140,13 +152,13 @@ public:
         },
         {
             {
-                .maxCurrent = 10,
-                .maxSpeed = 15,
+                .maxCurrent = 15,
+                .maxSpeed = 22,
                 .currentMode = true
             },
             {
-                .maxCurrent = 25,
-                .maxSpeed = 25,
+                .maxCurrent = 30,
+                .maxSpeed = 22,
                 .currentMode = true
             },
             {
@@ -180,6 +192,8 @@ protected:
     const uint8_t vescValUpdInterval = 4;
     uint8_t vescValUpdCnt = 0;
     float curSpeedKmh = 0;
+
+    bool zerostartWait = false;
 };
 
 

@@ -21,8 +21,11 @@ IPAddress apIP(10, 13, 37, 1);
 // DNSServer dnsServer;
 // const byte DNS_PORT = 53;
 
-uint16_t WEBGUI::tuninglabel,WEBGUI::controlsLabel,WEBGUI::wifi_ssid_text,WEBGUI::batCellsLabel, WEBGUI::wifi_pass_text,WEBGUI::wifi_ap_pass_text,WEBGUI::wifi_ap_ssid_text;
+uint16_t WEBGUI::wifi_ssid_text,WEBGUI::batCellsLabel, WEBGUI::wifi_pass_text,WEBGUI::wifi_ap_pass_text,WEBGUI::wifi_ap_ssid_text;
 uint16_t WEBGUI::fpStatLabel,WEBGUI::fpSlotSelect;
+uint16_t WEBGUI::saveControlBtn,WEBGUI::tuninglabel,WEBGUI::controlsLabel;
+uint16_t WEBGUI::drivemodeUi[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES][3];
+String WEBGUI::drivemodeNames[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES];
 uint16_t WEBGUI::switchHiddenSSID;
 uint16_t WEBGUI::saveWifiBtn;
 uint8_t WEBGUI::clearFpCount = 0;
@@ -43,7 +46,7 @@ const String nvskey_APHIDDEN = "APHIDE";
 // }
 void WEBGUI::run(VCU* vcu){
     
-    setup(vcu);
+    // setup(vcu); // called from main task
     // task();
     xTaskCreate(
         WEBGUI::task, // Function that should be called
@@ -124,10 +127,10 @@ void WEBGUI::update(){
         // Controls
         char controlStr[80];
         VehicleControls::ControlState controls = vcu->controls.getControls();
-        snprintf(controlStr,80,"Connected: %d, Mode: %d, Ind: %d, Light: %d, Walk: %d, Brake: %d, Throttle: %f\n",controls.connected, controls.mode,controls.indicators,controls.light,controls.specialmode,controls.brake,controls.throttle);
+        snprintf(controlStr,80,"Connected: %d, Mode: %d, Ind: %d, Light: %d, Walk: %d, Brake: %d, Throttle: %f",controls.connected, controls.mode,controls.indicators,controls.light,controls.specialmode,controls.brake,controls.throttle);
         ESPUI.updateLabel(controlsLabel,controlStr);
 
-        snprintf(controlStr,80,"PErr: %f, Ierr: %f, Derr: %f\n",vcu->speedPv,vcu->speedIv,vcu->speedDv);
+        snprintf(controlStr,80,"PErr: %f\nIerr: %f\nDerr: %f\nCurrent target: %fA",vcu->speedPv,vcu->speedIv,vcu->speedDv,vcu->lastCurrent);
         ESPUI.updateLabel(tuninglabel,controlStr);
         // Tuning
 
@@ -176,10 +179,10 @@ void WEBGUI::enterWifiDetailsCallback(Control *sender, int type) {
 		// Serial.println(ESPUI.getControl(wifi_ssid_text)->value);
 		// Serial.println(ESPUI.getControl(wifi_pass_text)->value);
 		bool nvsok;
-        nvsok = NVS.setString(nvskey_SSID,ESPUI.getControl(wifi_ssid_text)->value);
-        nvsok = NVS.setString(nvskey_WIFIPASS,ESPUI.getControl(wifi_pass_text)->value);
-        nvsok = NVS.setString(nvskey_APPASS,ESPUI.getControl(wifi_ap_pass_text)->value);
-        nvsok = NVS.setString(nvskey_APSSID,ESPUI.getControl(wifi_ap_ssid_text)->value);
+        nvsok = NVS.setString(nvskey_SSID,ESPUI.getControl(wifi_ssid_text)->value,false);
+        nvsok = NVS.setString(nvskey_WIFIPASS,ESPUI.getControl(wifi_pass_text)->value,false);
+        nvsok = NVS.setString(nvskey_APPASS,ESPUI.getControl(wifi_ap_pass_text)->value,false);
+        nvsok = NVS.setString(nvskey_APSSID,ESPUI.getControl(wifi_ap_ssid_text)->value,false);
         nvsok = NVS.setInt(nvskey_APHIDDEN,hiddenAp ? 1:0);
         nvsok = NVS.commit();
         if(nvsok){
@@ -260,20 +263,23 @@ void WEBGUI::setup(VCU* vcu)
         int apHidden = NVS.getInt(nvskey_APHIDDEN,0);
         WiFi.softAP(apssidnvs,appassnvs,11,apHidden);
 
-        uint8_t timeout = 5;
+        // uint16_t timeout = 500;
 
-        do
-        {
-            vTaskDelay(500);
-            Serial.print(".");
-            timeout--;
-        } while (timeout);
+        // do
+        // {
+        //     vTaskDelay(500);
+        //     Serial.print(".");
+        //     timeout--;
+        // } while (timeout && WiFi.status() != WL_CONNECTED);
     }else{
+
+    
         // Connected
         if (!MDNS.begin(hostname)) {
             Serial.println("Error setting up MDNS responder!");
         }
     }
+    
 
 
 
@@ -303,15 +309,38 @@ void WEBGUI::setup(VCU* vcu)
 
     // Drive modes
     ESPUI.addControl(ControlType::Separator, "Tuning", "", ControlColor::None, tabModes);
-    uint16_t speedControlP = ESPUI.addControl(Number, "P", String(vcu->speedP), Peterriver, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedP = sender->value.toFloat();});
-    uint16_t speedControlI = ESPUI.addControl(Number, "I", String(vcu->speedI), Peterriver, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedI = sender->value.toFloat();});
-    uint16_t speedControlD = ESPUI.addControl(Number, "D", String(vcu->speedD), Peterriver, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedD = sender->value.toFloat();});
-    uint16_t speedControlIlim = ESPUI.addControl(Number, "I limit", String(vcu->speedIlim), Peterriver, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedIlim = sender->value.toFloat();});
-    uint16_t speedControlIlimneg = ESPUI.addControl(Number, "I limit neg", String(vcu->speedIlimneg), Peterriver, speedControlIlim, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedIlimneg = sender->value.toFloat();});
+    uint16_t speedControlP = ESPUI.addControl(Number, "P", String(vcu->speedP), Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedP = sender->value.toFloat();});
+    uint16_t speedControlI = ESPUI.addControl(Number, "I", String(vcu->speedI), Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedI = sender->value.toFloat();});
+    uint16_t speedControlD = ESPUI.addControl(Number, "D", String(vcu->speedD), Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedD = sender->value.toFloat();});
+    uint16_t speedControlIlim = ESPUI.addControl(Number, "I limit (DEBUG. NOT SAVED)", String(vcu->speedIlim), Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedIlim = sender->value.toFloat();});
+    uint16_t speedControlIlimneg = ESPUI.addControl(Number, "I limit neg (DEBUG. NOT SAVED)", String(vcu->speedIlimneg), Wetasphalt, speedControlIlim, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->speedIlimneg = sender->value.toFloat();});
 
     tuninglabel = ESPUI.addControl(ControlType::Label, "Tune info", "None", ControlColor::Turquoise,tabModes);
-    ESPUI.addControl(Min, "", "1", None, speedControlP);
-	ESPUI.addControl(Max, "", "300", None, speedControlP);
+    for(uint16_t item : {speedControlP,speedControlI,speedControlD}){
+        ESPUI.addControl(Min, "", "0", None, item);
+	    ESPUI.addControl(Max, "", "2000", None, item);
+    }
+    
+    ESPUI.addControl(ControlType::Separator, "Drive modes. Make sure not to exceed limits of VESC or Hardware", "", ControlColor::None, tabModes);
+    uint16_t brakeregenNum = ESPUI.addControl(Number, "Brake regen current A", String(vcu->brakeCurrent), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeCurrent = sender->value.toFloat();});
+    uint16_t offThregenNum = ESPUI.addControl(Number, "Off throttle regen current A", String(vcu->offThrottleBrake), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->offThrottleBrake = sender->value.toFloat();});
+
+    for(uint8_t m = 0;m< VCU::NUMDRIVESUBMODES;m++){
+        ESPUI.addControl(ControlType::Separator, (m == 1 ? "Master (special) drive modes" : "Normal drive modes"), "", ControlColor::None, tabModes);
+        for(uint8_t i = 0;i<VCU::NUMDRIVEMODES;i++){
+            drivemodeNames[m][i] = ("Drive mode: ") + String(i) + (m == 1 ? " (Master)" : " (Normal)"); // Save string static
+            ESPUI.addControl(ControlType::Separator, drivemodeNames[m][i].c_str(), "", ControlColor::None, tabModes);
+            drivemodeUi[m][i][0] = speedControlP = ESPUI.addControl(Number, "Max current A", String(vcu->driveModes[m][i].maxCurrent), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==N_VALUE) vcu->driveModes[m][i].maxCurrent = sender->value.toFloat();});
+            drivemodeUi[m][i][1] = speedControlP = ESPUI.addControl(Number, "Max speed kmh", String(vcu->driveModes[m][i].maxSpeed), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==N_VALUE) vcu->driveModes[m][i].maxSpeed = sender->value.toFloat();});
+            drivemodeUi[m][i][2] = speedControlP = ESPUI.addControl(Switcher, "Current throttle mode\n(Off = speed control)", (vcu->driveModes[m][i].currentMode ? "1" : "0"), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==S_VALUE) vcu->driveModes[m][i].maxSpeed = sender->value.toInt() != 0;});
+            ESPUI.addControl(Min, "", "0", None, drivemodeUi[m][i][0]);
+	        ESPUI.addControl(Max, "", "100", None, drivemodeUi[m][i][0]);
+            ESPUI.addControl(Min, "", "0", None, drivemodeUi[m][i][1]);
+	        ESPUI.addControl(Max, "", "100", None, drivemodeUi[m][i][1]);
+        }
+    }
+    ESPUI.addControl(ControlType::Separator, "Actions", "", ControlColor::None, tabModes);
+    saveControlBtn= ESPUI.addControl(Button, "Actions", "Save", Peterriver, tabModes, [vcu](Control *sender, int t){if(t==B_DOWN) vcu->saveSettings();});
 
 
     // Fingerprint
@@ -350,8 +379,10 @@ void WEBGUI::setup(VCU* vcu)
     // OTA
     uint16_t otaframe = ESPUI.addControl( ControlType::Label, "OTA Update", "<iframe src=/ota width=100%></iframe>", ControlColor::Carrot, tabWifi );
     ESPUI.setElementStyle(otaframe,"background-color: transparent;");
+    ESPUI.addControl(Text, "Version info", VERSIONSTR, Wetasphalt, tabWifi, dummyCb);
 
     // Start Webserver
+    ESPUI.jsonChunkNumberMax = 5;
     ESPUI.begin("Hyper VCU");
     AsyncOTA.begin(ESPUI.WebServer());
 }

@@ -60,23 +60,27 @@ void FingerprintReader::task(){
     bool fingerOn = false;
     while(1){
         vTaskDelay(150);
-        if (digitalRead(FP_TOUCH) && !fingerOn && (enrollstep == EnrollStep::none || enrollstep == EnrollStep::error || enrollstep == EnrollStep::success)){
+        if (!digitalRead(FP_TOUCH) && !fingerOn && (enrollstep == EnrollStep::none || enrollstep == EnrollStep::error || enrollstep == EnrollStep::success)){
             fingerOn = true;
             fpSetPwr(true);
             vTaskDelay(100);
+            fpSetLed(FINGERPRINT_LED_GRADUAL_ON,10,FINGERPRINT_LED_BLUE,2);
             xSemaphoreTake(fingerSem, portMAX_DELAY);
             lastFingerResult = checkCurFinger();
             xSemaphoreGive(fingerSem);
             xSemaphoreGive(fingerBlockSem);
             if(lastFingerResult >= 0){
+                fpSetLed(FINGERPRINT_LED_FLASHING,3,FINGERPRINT_LED_BLUE,2);
                 DBG_SERIAL.println("Finger OK");
                 // DBG_SERIAL.println(lastFingerResult);
+            }else{
+                fpSetLed(FINGERPRINT_LED_FLASHING,3,FINGERPRINT_LED_RED,3);
             }
             if(callback){
                 callback(lastFingerResult);
             }
         }else{
-            fingerOn = digitalRead(FP_TOUCH);
+            fingerOn = !digitalRead(FP_TOUCH);
             // Not touching and not enrolling
             vTaskDelay(250);
             if(enrollstep == EnrollStep::started){
@@ -99,7 +103,8 @@ int32_t FingerprintReader::checkCurFinger(){
     if(p != FINGERPRINT_OK){return -p;}
     p = finger.image2Tz();
     if(p != FINGERPRINT_OK){return -p;}
-    p = finger.fingerFastSearch();
+    // p = finger.fingerFastSearch();
+    p = finger.fingerSearch();
     if(p != FINGERPRINT_OK){return -p;}
     
     return finger.fingerID;
@@ -190,10 +195,13 @@ void FingerprintReader::startEnrollment(uint16_t id){
 int32_t FingerprintReader::addFinger(uint16_t id){
     xSemaphoreTake(fingerSem, portMAX_DELAY);
     fpSetPwr(true,true);
+    vTaskDelay(100);
     int32_t res = addFingerProcess(id);
     if(res == FINGERPRINT_OK){
+        fpSetLed(1,1,0x02,0);
         enrollstep = EnrollStep::success;
     }else{
+        fpSetLed(1,2,0x02,0);
         enrollstep = EnrollStep::error;
     }
     if(!res){
@@ -218,6 +226,7 @@ int32_t FingerprintReader::addFingerProcess(uint16_t id){
     int16_t p = -1;
     int16_t timeout = 500;
     // First scan
+    fpSetLed(FINGERPRINT_LED_BREATHING,2,FINGERPRINT_LED_PURPLE,0);
     enrollstep = EnrollStep::waitfirst;
     do{
         p = finger.getImage();

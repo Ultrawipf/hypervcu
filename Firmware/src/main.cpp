@@ -78,11 +78,11 @@ void setup()
     //     ledtask       // Task handle
     // );
 
-    
+    vcu.loadSettings();
     fp.run(); // Start fingerprint task
     vcu.run(); // Start VCU task
-    
-    // WEBGUI::setup(&vcu);
+
+    WEBGUI::setup(&vcu);
     WEBGUI::run(&vcu);
 }
 
