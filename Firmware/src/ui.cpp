@@ -379,7 +379,7 @@ void WEBGUI::setup(VCU* vcu)
     // OTA
     uint16_t otaframe = ESPUI.addControl( ControlType::Label, "OTA Update", "<iframe src=/ota width=100%></iframe>", ControlColor::Carrot, tabWifi );
     ESPUI.setElementStyle(otaframe,"background-color: transparent;");
-    ESPUI.addControl(Text, "Version info", VERSIONSTR, Wetasphalt, tabWifi, dummyCb);
+    uint16_t verstext = ESPUI.addControl(ControlType::Label, "Version info", VERSIONSTR, Wetasphalt, tabWifi, dummyCb);
 
     // Start Webserver
     ESPUI.jsonChunkNumberMax = 5;

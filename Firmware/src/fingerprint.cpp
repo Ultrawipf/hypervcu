@@ -64,17 +64,17 @@ void FingerprintReader::task(){
             fingerOn = true;
             fpSetPwr(true);
             vTaskDelay(100);
-            fpSetLed(FINGERPRINT_LED_GRADUAL_ON,10,FINGERPRINT_LED_BLUE,2);
+            fpSetLed(FINGERPRINT_LED_GRADUAL_ON,50,FINGERPRINT_LED_BLUE,2);
             xSemaphoreTake(fingerSem, portMAX_DELAY);
             lastFingerResult = checkCurFinger();
             xSemaphoreGive(fingerSem);
             xSemaphoreGive(fingerBlockSem);
             if(lastFingerResult >= 0){
-                fpSetLed(FINGERPRINT_LED_FLASHING,3,FINGERPRINT_LED_BLUE,2);
+                fpSetLed(FINGERPRINT_LED_FLASHING,150,FINGERPRINT_LED_BLUE,3);
                 DBG_SERIAL.println("Finger OK");
                 // DBG_SERIAL.println(lastFingerResult);
             }else{
-                fpSetLed(FINGERPRINT_LED_FLASHING,3,FINGERPRINT_LED_RED,3);
+                fpSetLed(FINGERPRINT_LED_FLASHING,100,FINGERPRINT_LED_RED,5);
             }
             if(callback){
                 callback(lastFingerResult);
@@ -198,10 +198,10 @@ int32_t FingerprintReader::addFinger(uint16_t id){
     vTaskDelay(100);
     int32_t res = addFingerProcess(id);
     if(res == FINGERPRINT_OK){
-        fpSetLed(1,1,0x02,0);
+        fpSetLed(FINGERPRINT_LED_FLASHING,100,FINGERPRINT_LED_PURPLE,5);
         enrollstep = EnrollStep::success;
     }else{
-        fpSetLed(1,2,0x02,0);
+        fpSetLed(FINGERPRINT_LED_FLASHING,100,FINGERPRINT_LED_RED,5);
         enrollstep = EnrollStep::error;
     }
     if(!res){
@@ -226,7 +226,7 @@ int32_t FingerprintReader::addFingerProcess(uint16_t id){
     int16_t p = -1;
     int16_t timeout = 500;
     // First scan
-    fpSetLed(FINGERPRINT_LED_BREATHING,2,FINGERPRINT_LED_PURPLE,0);
+    fpSetLed(FINGERPRINT_LED_BREATHING,50,FINGERPRINT_LED_PURPLE,0);
     enrollstep = EnrollStep::waitfirst;
     do{
         p = finger.getImage();

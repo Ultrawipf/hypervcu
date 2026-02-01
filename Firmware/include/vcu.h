@@ -111,7 +111,7 @@ public:
 
     float brakeCurrent = 0;
     float offThrottleBrake = 0;
-    float lockCurrent = 10;
+    float lockCurrent = 15;
     float idleCurrent = 0.05f; // Current when coasting with throttle >0
 
     float speedPIDscale = 0.01;

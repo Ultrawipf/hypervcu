@@ -184,7 +184,7 @@ void VCU::setLocked(bool locked){
     if(locked){
         // Brake vesc
         controls.currentDisplay.errors |= VCUERR_LOCKED;
-        vesc.setBrakeCurrent(10);
+        vesc.setBrakeCurrent(lockCurrent);
     }else{
         controls.currentDisplay.errors &= ~VCUERR_LOCKED;
         vesc.setBrakeCurrent(0);
