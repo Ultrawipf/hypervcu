@@ -67,7 +67,7 @@ void VCU::task(void * pvParameters){
     controls.run();
     setupVesc();
     
-    setLocked(true);
+    setLocked(fingerprint->getConnected()); // Only set locked if fingerprint reader available. Should probably have a UI setting....
     rpmToKmh = calcSpeedScale(wheelDiamMM,poles);
 
     running = true;
@@ -246,9 +246,12 @@ void VCU::updateMotor(){
 
         current = (speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale;
         
-        // if(curSpeedKmh > curDriveMode->maxSpeed){
-        //     current -= (curSpeedKmh-curDriveMode->maxSpeed) * 2;
-        // }
+        if(curSpeedKmh > curDriveMode->maxSpeed){
+            // current -= (curSpeedKmh-curDriveMode->maxSpeed) * 2;
+            if(speedIv > 0){
+                speedIv = speedIv / 2; // Fast decay
+            }
+        }
     }
 
     float minLim = idleCurrent;

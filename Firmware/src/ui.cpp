@@ -233,8 +233,8 @@ void WEBGUI::setup(VCU* vcu)
     WiFi.setHostname(hostname);
 
     // try to connect to existing network
-    String wifissid = NVS.getString(nvskey_SSID);
-    String wifipass = NVS.getString(nvskey_WIFIPASS);
+    String wifissid = NVS.getString(nvskey_SSID,"");
+    String wifipass = NVS.getString(nvskey_WIFIPASS,"");
     bool wifistored = (!wifissid.isEmpty());
     if(wifistored){
         WiFi.begin(wifissid, wifipass);
