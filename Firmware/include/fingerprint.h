@@ -17,6 +17,7 @@ public:
     void fpSetPwr(bool enable,bool forceEnable = false);
     void fpSetLed(uint8_t mode,uint8_t speed,uint8_t color,uint8_t cycles=0);
     bool getConnected();
+    bool getReady(); // False during startup
 
     int32_t getLastFingerState(bool block = false);
     EnrollStep getEnrollState();
@@ -37,6 +38,7 @@ protected:
     uint8_t enPin;
     uint8_t touchPin;
     bool isConnected = false;
+    bool isReady = false;
     int32_t lastFingerResult = -FINGERPRINT_NOFINGER;
 
     uint16_t enrollNewFingerId = 0;

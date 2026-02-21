@@ -172,7 +172,7 @@ public:
 
     VehicleControls& controls;
     VescUart vesc;
-    FingerprintReader* fingerprint;
+    FingerprintReader* fingerprint = nullptr;
     // mc_configuration vescconf;
 
 protected:

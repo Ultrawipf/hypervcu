@@ -66,7 +66,9 @@ void VCU::task(void * pvParameters){
     controls.setup();
     controls.run();
     setupVesc();
-    
+    while(fingerprint && !fingerprint->getReady()){
+        delay(50);
+    }
     setLocked(fingerprint->getConnected()); // Only set locked if fingerprint reader available. Should probably have a UI setting....
     rpmToKmh = calcSpeedScale(wheelDiamMM,poles);
 
@@ -114,7 +116,7 @@ void VCU::task(void * pvParameters){
 
         // If exiting pedestrian mode and no fingerprint unlock
         if(newControls.brake && curControlState.specialmode && !newControls.specialmode){
-            if(!fingerprint->getConnected() && this->locked){
+            if(!fingerprint->getConnected()){
                 fpCb(1); // Force master finger
             }
         }
@@ -221,7 +223,7 @@ void VCU::updateMotor(){
     if(curDriveMode->currentMode){
         // Current control mode
         current = curDriveMode->maxCurrent * curControlState.throttle;
-        if(curSpeedKmh >= curDriveMode->maxSpeed){
+        if(curSpeedKmh >= curDriveMode->maxSpeed*0.85){
             // Current is only reduced when exceeding limit. TODO Tune this
             speedPv = curDriveMode->maxSpeed-curSpeedKmh;
             double lastSpeedPv = speedPv;

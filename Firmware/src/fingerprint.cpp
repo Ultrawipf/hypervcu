@@ -35,7 +35,7 @@ void FingerprintReader::run(){
 void FingerprintReader::task(){
     fingerSem = xSemaphoreCreateBinary();
     fingerBlockSem = xSemaphoreCreateBinary();
-
+    isReady = false;
     fpSetPwr(false);
 
     vTaskDelay(200);
@@ -56,6 +56,7 @@ void FingerprintReader::task(){
         fpSetPwr(false);
     }
     xSemaphoreGive(fingerSem);
+     isReady = true;
 
     bool fingerOn = false;
     while(1){
@@ -177,6 +178,14 @@ FingerprintReader::EnrollStep FingerprintReader::getEnrollState(){
  */
 bool FingerprintReader::getConnected(){
     return isConnected;
+}
+
+/**
+ * Returns true if reader startup detection is done.
+ * Use getConnected to check if actually connected
+ */
+bool FingerprintReader::getReady(){
+    return isReady;
 }
 /**
  * Starts process to add new finger into id slot in fingerprint thread
