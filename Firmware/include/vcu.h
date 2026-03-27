@@ -55,7 +55,7 @@ protected:
 
 
 class VCU{
-    static constexpr TickType_t interval = 25;
+    static constexpr TickType_t interval = 10;
     struct LightEffect{ // todo general effects
         uint8_t counter = 0;
         uint8_t period = 0;
@@ -97,6 +97,7 @@ public:
     // void setLights();
     void updateMotor();
     float calcSpeedScale(float wheelDiam,int poles);
+    void updateBrakeCurrent(float targetCurrent);
 
     void setLocked(bool locked);
     void changeDriveMode(DriveMode* mode);
@@ -117,9 +118,9 @@ public:
     float speedPIDscale = 0.01;
     float lastSpeed = 0;
     float lastCurrent = 0; // Previous requested motor current
-    float speedP = 40, speedI = 5, speedD = 30;
+    float speedP = 120, speedI = 3, speedD = 30;
     double speedPv = 0, speedIv = 0, speedDv = 0;
-    double speedIlim = 5000,speedIlimneg = -100;
+    double speedIlim = 500,speedIlimneg = -100;
 
     void fpCb(int finger);
 
@@ -130,6 +131,8 @@ public:
     bool zerostart = false;
     float minspeed = 2.0f; // Min non-zerostart speed. Also considered idle when below this speed. 
     float minspeedAlarm = 0.5f; // When locked flash indicators if pushed faster than this speed
+    float curBrakeA = 0;
+    float brakeRamp = 5; // in A/s
 
 
     DriveMode driveModes[NUMDRIVESUBMODES][NUMDRIVEMODES] = { // Make define length. driveMode is mode -1. Mode 0 is off.
@@ -145,20 +148,20 @@ public:
                 .currentMode = false
             },
             {
-                .maxCurrent = 30,
+                .maxCurrent = 35,
                 .maxSpeed = 21,
                 .currentMode = false
             }
         },
         {
             {
-                .maxCurrent = 15,
-                .maxSpeed = 22,
+                .maxCurrent = 20,
+                .maxSpeed = 21,
                 .currentMode = true
             },
             {
-                .maxCurrent = 30,
-                .maxSpeed = 22,
+                .maxCurrent = 35,
+                .maxSpeed = 21,
                 .currentMode = true
             },
             {

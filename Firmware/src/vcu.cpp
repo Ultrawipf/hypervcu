@@ -17,6 +17,7 @@ const String nvsKey_I = "PID_I";
 const String nvsKey_D = "PID_D";
 const String nvsKey_brakecurrent = "BRK_A";
 const String nvsKey_offthcurrent = "OFT_BRK_A";
+const String nvsKey_brakeRamp = "BRK_RMP";
 
 VCU::VCU(VehicleControls& controls,FingerprintReader* fingerprint)
 : controls(controls),fingerprint(fingerprint),vesc(25)
@@ -42,6 +43,7 @@ void VCU::saveSettings(){
     NVS.setFloat(nvsKey_D,speedD,false);
     NVS.setFloat(nvsKey_offthcurrent,offThrottleBrake,false);
     NVS.setFloat(nvsKey_brakecurrent,brakeCurrent,false);
+    NVS.setFloat(nvsKey_brakeRamp,brakeRamp,false);
     NVS.commit();
 }
 
@@ -59,6 +61,7 @@ void VCU::loadSettings(){
     speedD = NVS.getFloat(nvsKey_D,speedD);
     offThrottleBrake = NVS.getFloat(nvsKey_offthcurrent,offThrottleBrake);
     brakeCurrent = NVS.getFloat(nvsKey_brakecurrent,brakeCurrent);
+    brakeRamp = NVS.getFloat(nvsKey_brakeRamp,brakeRamp);
 }
 
 void VCU::task(void * pvParameters){
@@ -220,6 +223,14 @@ void VCU::updateMotor(){
         return;
     }
     float current = 0;
+    if(curControlState.brake){
+        updateBrakeCurrent(brakeCurrent); // Brake
+        return;
+    }else if(lastControlState.brake && !curControlState.brake){
+        updateBrakeCurrent(0); // Do not brake
+        return;
+    }
+    // Drive
     if(curDriveMode->currentMode){
         // Current control mode
         current = curDriveMode->maxCurrent * curControlState.throttle;
@@ -250,9 +261,9 @@ void VCU::updateMotor(){
         
         if(curSpeedKmh > curDriveMode->maxSpeed){
             // current -= (curSpeedKmh-curDriveMode->maxSpeed) * 2;
-            if(speedIv > 0){
-                speedIv = speedIv / 2; // Fast decay
-            }
+            // if(speedIv > 0){
+            //     speedIv = speedIv / 2; // Fast decay
+            // }
         }
     }
 
@@ -262,26 +273,33 @@ void VCU::updateMotor(){
         speedIv = 0;
         speedDv = 0;
     }        
-    if(curControlState.throttle == 0){
-            current = 0;
+  
+    current = max(minLim,min(current,curDriveMode->maxCurrent));
+    
+    // Not braking. drive
+    if(curControlState.throttle == 0.0f && offThrottleBrake && curSpeedKmh > minspeed && curControlState.mode != 0){
+        updateBrakeCurrent(offThrottleBrake);
     }else{
-        current = max(minLim,min(current,curDriveMode->maxCurrent));
+        updateBrakeCurrent(0);
+        vesc.setCurrent(current);
     }
-
-    if(curControlState.brake){
-        vesc.setBrakeCurrent(brakeCurrent); // Brake
-    }else if(lastControlState.brake && !curControlState.brake){
-        vesc.setBrakeCurrent(0); // Do not brake
-    }else{ // Not braking. drive
-        if(curControlState.throttle == 0.0f && offThrottleBrake && curSpeedKmh > minspeed && curControlState.mode != 0){
-            vesc.setBrakeCurrent(offThrottleBrake);
-        }else{
-            vesc.setCurrent(current);
-        }
         
-    }
+    
     lastCurrent = current;
     
+}
+
+void VCU::updateBrakeCurrent(float targetCurrent){
+    float lastBrake = curBrakeA;
+    if(targetCurrent == 0){
+        curBrakeA = 0;
+    }else{
+        curBrakeA = min(targetCurrent,curBrakeA + (brakeRamp*(interval/1000.0f)));
+    }
+    
+    if(curBrakeA != lastBrake){
+        vesc.setBrakeCurrent(curBrakeA);
+    }
 }
 
 void VCU::updateDisplayState(){
