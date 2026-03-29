@@ -98,6 +98,7 @@ public:
     void updateMotor();
     float calcSpeedScale(float wheelDiam,int poles);
     void updateBrakeCurrent(float targetCurrent);
+    void updateCurrent(float current);
 
     void setLocked(bool locked);
     void changeDriveMode(DriveMode* mode);
@@ -113,7 +114,7 @@ public:
     float brakeCurrent = 0;
     float offThrottleBrake = 0;
     float lockCurrent = 15;
-    float idleCurrent = 0.05f; // Current when coasting with throttle >0
+    float minCurrent = 0.02f; // Minimum current when coasting with throttle >0
 
     float speedPIDscale = 0.01;
     float lastSpeed = 0;
@@ -133,6 +134,9 @@ public:
     float minspeedAlarm = 0.5f; // When locked flash indicators if pushed faster than this speed
     float curBrakeA = 0;
     float brakeRamp = 5; // in A/s
+    float curCurrent = 0;
+
+    const uint8_t currentSmoothing = 1; // Average this many old samples into the new current when ramping up only
 
 
     DriveMode driveModes[NUMDRIVESUBMODES][NUMDRIVEMODES] = { // Make define length. driveMode is mode -1. Mode 0 is off.

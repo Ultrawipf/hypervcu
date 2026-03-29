@@ -92,7 +92,7 @@ void VCU::task(void * pvParameters){
                 vescValUpdCnt = 0;
                 vescOk = vesc.getVescValues(); // Update values
                 lastSpeed = curSpeedKmh;
-                curSpeedKmh = vesc.data.rpm * rpmToKmh;
+                curSpeedKmh = abs(vesc.data.rpm * rpmToKmh); // Absolute speed
             }
 
         }else{
@@ -267,7 +267,7 @@ void VCU::updateMotor(){
         }
     }
 
-    float minLim = idleCurrent;
+    float minLim = minCurrent;
     if(curControlState.throttle < 0.1){
         minLim = 0;
         speedIv = 0;
@@ -280,8 +280,7 @@ void VCU::updateMotor(){
     if(curControlState.throttle == 0.0f && offThrottleBrake && curSpeedKmh > minspeed && curControlState.mode != 0){
         updateBrakeCurrent(offThrottleBrake);
     }else{
-        updateBrakeCurrent(0);
-        vesc.setCurrent(current);
+        updateCurrent(current);
     }
         
     
@@ -294,12 +293,30 @@ void VCU::updateBrakeCurrent(float targetCurrent){
     if(targetCurrent == 0){
         curBrakeA = 0;
     }else{
-        curBrakeA = min(targetCurrent,curBrakeA + (brakeRamp*(interval/1000.0f)));
+        if(brakeRamp > 0){
+            curBrakeA = min(targetCurrent,curBrakeA + (brakeRamp*(interval/1000.0f)));
+        }else{
+            curBrakeA = targetCurrent;
+        }
     }
     
     if(curBrakeA != lastBrake){
         vesc.setBrakeCurrent(curBrakeA);
     }
+}
+
+void VCU::updateCurrent(float current){
+    if(curBrakeA){
+        updateBrakeCurrent(0);
+    }
+    float lastCurrent = curCurrent;
+    curCurrent = current;
+    // if(abs(current) > abs(lastCurrent)){
+    //     curCurrent = (current + (lastCurrent * currentSmoothing)) / (currentSmoothing+1);
+    // }else{
+    //     curCurrent = current;
+    // }
+    vesc.setCurrent(curCurrent);
 }
 
 void VCU::updateDisplayState(){

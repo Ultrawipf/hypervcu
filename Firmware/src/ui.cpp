@@ -320,9 +320,15 @@ void WEBGUI::setup(VCU* vcu)
     }
     
     ESPUI.addControl(ControlType::Separator, "Drive modes. Make sure not to exceed limits of VESC or Hardware", "", ControlColor::None, tabModes);
-    uint16_t brakeregenNum = ESPUI.addControl(Number, "Brake regen current A", String(vcu->brakeCurrent), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeCurrent = sender->value.toFloat();});
-    uint16_t offThregenNum = ESPUI.addControl(Number, "Off throttle regen current A", String(vcu->offThrottleBrake), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->offThrottleBrake = sender->value.toFloat();});
-    uint16_t brakeRamp = ESPUI.addControl(Number, "Brake ramp speed A/s", String(vcu->brakeRamp), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeRamp = sender->value.toFloat();});
+    uint16_t brakeregenNum = ESPUI.addControl(Number, "Brake regen current A", String(vcu->brakeCurrent), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeCurrent = max(0.0f,sender->value.toFloat());});
+    ESPUI.addControl(Min, "", "0", None, brakeregenNum);
+    ESPUI.addControl(Max, "", "150", None, brakeregenNum);
+    uint16_t offThregenNum = ESPUI.addControl(Number, "Off throttle regen current A", String(vcu->offThrottleBrake), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->offThrottleBrake = max(0.0f,sender->value.toFloat());});
+    ESPUI.addControl(Min, "", "0", None, offThregenNum);
+    ESPUI.addControl(Max, "", "150", None, offThregenNum);
+    uint16_t brakeRamp = ESPUI.addControl(Number, "Brake ramp speed A/s (0 = No ramp)", String(vcu->brakeRamp), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeRamp = max(0.0f,sender->value.toFloat());});
+    ESPUI.addControl(Min, "", "0", None, brakeRamp);
+    ESPUI.addControl(Max, "", "250", None, brakeRamp);
 
     for(uint8_t m = 0;m< VCU::NUMDRIVESUBMODES;m++){
         ESPUI.addControl(ControlType::Separator, (m == 1 ? "Master (special) drive modes" : "Normal drive modes"), "", ControlColor::None, tabModes);
