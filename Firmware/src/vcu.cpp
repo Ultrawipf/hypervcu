@@ -82,10 +82,10 @@ void VCU::task(void * pvParameters){
         vTaskDelay(interval);
 
         VehicleControls::ControlState newControls = controls.getControls();
-        bool vescOn = digitalRead(VESC_EN);
+        bool vescOn = (VESC_EN_MODE == OUTPUT) ? digitalRead(VESC_EN) : true;
         if(vescOn){
             
-            if(vescValUpdCnt++ >= vescValUpdInterval){
+            if(vescValUpdCnt++ > vescValUpdInterval){
                 if(newControls.connected){
                     // vesc.sendKeepalive();
                 }
@@ -142,7 +142,21 @@ void VCU::task(void * pvParameters){
 
         updateLights();
         updateDisplayState();
-        updateMotor();
+
+        // Errstates:
+        controls.currentDisplay.errors = 0;
+        if(vescOk){
+            updateMotor();
+            // controls.currentDisplay.errors &= ~VCUERR_VESCNOK;
+        }else{
+            controls.currentDisplay.errors |= VCUERR_VESCNOK;
+        }
+        if(vesc.data.tempMosfet > 80 || vesc.data.tempMotor > 70){
+            controls.currentDisplay.errors |= VCUERR_VESCTEMP;
+        }
+        if(locked){
+            controls.currentDisplay.errors |= VCUERR_LOCKED;
+        }
     }
 }
 
@@ -188,10 +202,8 @@ void VCU::setLocked(bool locked){
     }
     if(locked){
         // Brake vesc
-        controls.currentDisplay.errors |= VCUERR_LOCKED;
         vesc.setBrakeCurrent(lockCurrent);
     }else{
-        controls.currentDisplay.errors &= ~VCUERR_LOCKED;
         vesc.setBrakeCurrent(0);
     }
     this->locked = locked;
@@ -234,15 +246,14 @@ void VCU::updateMotor(){
     if(curDriveMode->currentMode){
         // Current control mode
         current = curDriveMode->maxCurrent * curControlState.throttle;
-        if(curSpeedKmh >= curDriveMode->maxSpeed*0.85){
+        if(curSpeedKmh >= curDriveMode->maxSpeed*0.8){
             // Current is only reduced when exceeding limit. TODO Tune this
-            speedPv = curDriveMode->maxSpeed-curSpeedKmh;
             double lastSpeedPv = speedPv;
+            speedPv = curDriveMode->maxSpeed-curSpeedKmh;
             speedDv = speedPv-lastSpeedPv;
             speedIv += speedPv;
-            // current -= (curSpeedKmh - curDriveMode->maxSpeed) * 2;
             speedIv = max(speedIlimneg,min(speedIlim,speedIv)); // Limit
-            current = (speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale;
+            current = min<float>(current,(speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale);
         }
 
         // vesc.setCurrent(current);

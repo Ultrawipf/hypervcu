@@ -9,6 +9,8 @@
 
 #define VCUERR_LOCKED 0x01
 #define VCUERR_DISCONNECTED 0x06
+#define VCUERR_VESCNOK 0x10
+#define VCUERR_VESCTEMP 0x20
 
 // Interface for scooter/bike screens
 class VehicleControls{
@@ -114,12 +116,12 @@ public:
     float brakeCurrent = 0;
     float offThrottleBrake = 0;
     float lockCurrent = 15;
-    float minCurrent = 0.02f; // Minimum current when coasting with throttle >0
+    float minCurrent = 0.0f; // Minimum current when coasting with throttle >0
 
     float speedPIDscale = 0.01;
     float lastSpeed = 0;
     float lastCurrent = 0; // Previous requested motor current
-    float speedP = 120, speedI = 3, speedD = 30;
+    float speedP = 130, speedI = 2, speedD = 50;
     double speedPv = 0, speedIv = 0, speedDv = 0;
     double speedIlim = 500,speedIlimneg = -100;
 
@@ -196,7 +198,7 @@ protected:
     float wheelDiamMM = 250;
     float rpmToKmh = 0;
 
-    const uint8_t vescValUpdInterval = 4;
+    const uint8_t vescValUpdInterval = 0; // 0 always update, 1, half rate...
     uint8_t vescValUpdCnt = 0;
     float curSpeedKmh = 0;
 
