@@ -18,6 +18,8 @@ const String nvsKey_D = "PID_D";
 const String nvsKey_brakecurrent = "BRK_A";
 const String nvsKey_offthcurrent = "OFT_BRK_A";
 const String nvsKey_brakeRamp = "BRK_RMP";
+const String nvsKey_wheelDiam = "WHL_MM";
+
 
 VCU::VCU(VehicleControls& controls,FingerprintReader* fingerprint)
 : controls(controls),fingerprint(fingerprint),vesc(25)
@@ -62,6 +64,7 @@ void VCU::loadSettings(){
     offThrottleBrake = NVS.getFloat(nvsKey_offthcurrent,offThrottleBrake);
     brakeCurrent = NVS.getFloat(nvsKey_brakecurrent,brakeCurrent);
     brakeRamp = NVS.getFloat(nvsKey_brakeRamp,brakeRamp);
+    wheelDiamMM = NVS.getFloat(nvsKey_wheelDiam,wheelDiamMM);
 }
 
 void VCU::task(void * pvParameters){

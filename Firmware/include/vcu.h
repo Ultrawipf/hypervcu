@@ -195,7 +195,7 @@ protected:
     bool directMode = true;
     // float maxCurrent = 10;
     uint8_t poles = 30;
-    float wheelDiamMM = 250;
+    float wheelDiamMM = 250; // Make configurable. 225 or 250?
     float rpmToKmh = 0;
 
     const uint8_t vescValUpdInterval = 0; // 0 always update, 1, half rate...

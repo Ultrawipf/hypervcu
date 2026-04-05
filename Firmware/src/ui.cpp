@@ -18,10 +18,12 @@ bool WEBGUI::hiddenAp = false;
 IPAddress apIP(10, 13, 37, 1);
 // DNSServer dnsServer;
 // const byte DNS_PORT = 53;
+const unsigned int tempStrLen = 150;
+char controlStr[tempStrLen];
 
 uint16_t WEBGUI::wifi_ssid_text,WEBGUI::batCellsLabel, WEBGUI::wifi_pass_text,WEBGUI::wifi_ap_pass_text,WEBGUI::wifi_ap_ssid_text;
 uint16_t WEBGUI::fpStatLabel,WEBGUI::fpSlotSelect;
-uint16_t WEBGUI::saveControlBtn,WEBGUI::tuninglabel,WEBGUI::controlsLabel;
+uint16_t WEBGUI::saveControlBtn,WEBGUI::tuninglabel,WEBGUI::controlsLabel,WEBGUI::vesclabel;
 uint16_t WEBGUI::drivemodeUi[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES][3];
 String WEBGUI::drivemodeNames[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES];
 uint16_t WEBGUI::switchHiddenSSID;
@@ -49,7 +51,7 @@ void WEBGUI::run(VCU* vcu){
     xTaskCreate(
         WEBGUI::task, // Function that should be called
         "GUI",        // Name of the task (for debugging)
-        configMINIMAL_STACK_SIZE+8192,      // Stack size (bytes)
+        configMINIMAL_STACK_SIZE+9192,      // Stack size (bytes)
         NULL,      // Parameter to pass
         3,         // Task priority
         WEBGUI::taskHandle       // Task handle
@@ -123,14 +125,18 @@ void WEBGUI::update(){
         }
 
         // Controls
-        char controlStr[80];
+        // char controlStr[tempStrLen];
         VehicleControls::ControlState controls = vcu->controls.getControls();
-        snprintf(controlStr,80,"Connected: %d, Mode: %d, Ind: %d, Light: %d, Walk: %d, Brake: %d, Throttle: %f",controls.connected, controls.mode,controls.indicators,controls.light,controls.specialmode,controls.brake,controls.throttle);
+        snprintf(controlStr,tempStrLen,"Connected: %d, Mode: %d, Ind: %d, Light: %d, Walk: %d, Brake: %d, Throttle: %f",controls.connected, controls.mode,controls.indicators,controls.light,controls.specialmode,controls.brake,controls.throttle);
         ESPUI.updateLabel(controlsLabel,controlStr);
-
-        snprintf(controlStr,80,"PErr: %f\nIerr: %f\nDerr: %f\nCurrent target: %fA",vcu->speedPv,vcu->speedIv,vcu->speedDv,vcu->lastCurrent);
-        ESPUI.updateLabel(tuninglabel,controlStr);
         // Tuning
+        snprintf(controlStr,tempStrLen,"PErr: %f\nIerr: %f\nDerr: %f\nCurrent target: %fA",vcu->speedPv,vcu->speedIv,vcu->speedDv,vcu->lastCurrent);
+        ESPUI.updateLabel(tuninglabel,controlStr);
+        // Vesc
+        snprintf(controlStr,tempStrLen,"FET: %f°C\nMOT: %f°C\nERPM: %f\nDuty: %f\nPhase A: %f\nBat A: %fA\nVolt: %f\nFaults: %d",
+            vcu->vesc.data.tempMosfet,vcu->vesc.data.tempMotor,vcu->vesc.data.rpm,vcu->vesc.data.dutyCycleNow,vcu->vesc.data.avgMotorCurrent,vcu->vesc.data.avgInputCurrent,vcu->vesc.data.inpVoltage,(uint16_t)vcu->vesc.data.error);
+        ESPUI.updateLabel(vesclabel,controlStr);
+
 
     }else{
         ESPUI.updateLabel(batLabel,"VCU+BMS not available");
@@ -287,6 +293,8 @@ void WEBGUI::setup(VCU* vcu)
     Serial.print("IP address: ");
     Serial.println(WiFi.getMode() == WIFI_AP ? WiFi.softAPIP() : WiFi.localIP());
 
+    // ESPUI
+    ESPUI.jsonUpdateDocumentSize = 8000; // Reduces crashes when updating labels
 
     uint16_t tabstatus = ESPUI.addControl(ControlType::Tab, "tabstatus", "Status");
     uint16_t tabModes = ESPUI.addControl(ControlType::Tab, "drivemodes", "Drive modes");
@@ -294,7 +302,9 @@ void WEBGUI::setup(VCU* vcu)
     uint16_t tabWifi = ESPUI.addControl(ControlType::Tab, "tabsysconf", "System config");
     
     // status = ESPUI.addControl(ControlType::Label, "Status:", "Stop", ControlColor::Turquoise);
-    
+    // VESC
+    ESPUI.addControl(ControlType::Separator, "VESC", "", ControlColor::None, tabstatus);
+    vesclabel = ESPUI.addControl(ControlType::Label, "VESC info", "None", ControlColor::Turquoise,tabstatus);
     // BMS
     ESPUI.addControl(ControlType::Separator, "BMS", "", ControlColor::None, tabstatus);
     batLabel = ESPUI.addControl(ControlType::Label, "BMS Status", "None", ControlColor::Peterriver,tabstatus);
