@@ -184,6 +184,9 @@ public:
     FingerprintReader* fingerprint = nullptr;
     // mc_configuration vescconf;
 
+    uint8_t getMotorPoles();
+    float getWheelDiam();
+
 protected:
     void task(void * pvParameters);
     LightState curLightState;

@@ -328,6 +328,13 @@ void WEBGUI::setup(VCU* vcu)
         ESPUI.addControl(Min, "", "0", None, item);
 	    ESPUI.addControl(Max, "", "2000", None, item);
     }
+
+    uint16_t wheelMM = ESPUI.addControl(Number, "Wheel diameter (mm)", String(vcu->getWheelDiam()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->calcSpeedScale(max(0.0f,sender->value.toFloat()),vcu->getMotorPoles());});
+    ESPUI.addControl(Min, "", "10", None, wheelMM);
+    ESPUI.addControl(Max, "", "10000", None, wheelMM);
+    uint16_t motorPoles = ESPUI.addControl(Number, "Motor poles", String(vcu->getMotorPoles()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->calcSpeedScale(vcu->getWheelDiam(),max<int>(1,sender->value.toInt()));});
+    ESPUI.addControl(Min, "", "1", None, wheelMM);
+    ESPUI.addControl(Max, "", "100", None, wheelMM);
     
     ESPUI.addControl(ControlType::Separator, "Drive modes. Make sure not to exceed limits of VESC or Hardware", "", ControlColor::None, tabModes);
     uint16_t brakeregenNum = ESPUI.addControl(Number, "Brake regen current A", String(vcu->brakeCurrent), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeCurrent = max(0.0f,sender->value.toFloat());});

@@ -19,7 +19,7 @@ const String nvsKey_brakecurrent = "BRK_A";
 const String nvsKey_offthcurrent = "OFT_BRK_A";
 const String nvsKey_brakeRamp = "BRK_RMP";
 const String nvsKey_wheelDiam = "WHL_MM";
-
+const String nvsKey_motorpoles= "MT_PLS";
 
 VCU::VCU(VehicleControls& controls,FingerprintReader* fingerprint)
 : controls(controls),fingerprint(fingerprint),vesc(25)
@@ -46,6 +46,8 @@ void VCU::saveSettings(){
     NVS.setFloat(nvsKey_offthcurrent,offThrottleBrake,false);
     NVS.setFloat(nvsKey_brakecurrent,brakeCurrent,false);
     NVS.setFloat(nvsKey_brakeRamp,brakeRamp,false);
+    NVS.setFloat(nvsKey_wheelDiam,wheelDiamMM,false);
+    NVS.setInt(nvsKey_motorpoles,poles,false);
     NVS.commit();
 }
 
@@ -65,6 +67,9 @@ void VCU::loadSettings(){
     brakeCurrent = NVS.getFloat(nvsKey_brakecurrent,brakeCurrent);
     brakeRamp = NVS.getFloat(nvsKey_brakeRamp,brakeRamp);
     wheelDiamMM = NVS.getFloat(nvsKey_wheelDiam,wheelDiamMM);
+    poles = NVS.getFloat(nvsKey_motorpoles,poles);
+
+    rpmToKmh = calcSpeedScale(wheelDiamMM,poles);
 }
 
 void VCU::task(void * pvParameters){
@@ -376,6 +381,15 @@ void VCU::updateLights(){
 
     // Set indicator state on display
 }
+
+uint8_t VCU::getMotorPoles(){
+    return poles;
+}
+
+float VCU::getWheelDiam(){
+    return wheelDiamMM;
+}
+
 
 
 void VCU::taskFuncStatic(void * pvParameters){
