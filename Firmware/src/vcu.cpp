@@ -238,7 +238,7 @@ void VCU::updateMotor(){
         vesc.setBrakeCurrent(lockCurrent);
         return;
     }
-    if(!curControlState.connected || curControlState.mode == 0 || curDriveMode == nullptr || (!zerostart && (curSpeedKmh < minspeed))){
+    if(!curControlState.connected || curControlState.mode == 0 || curDriveMode == nullptr || ((!zerostart && !curDriveMode->currentMode) && (curSpeedKmh < minspeed))){
         vesc.setCurrent(0);
         return;
     }
@@ -254,7 +254,7 @@ void VCU::updateMotor(){
     if(curDriveMode->currentMode){
         // Current control mode
         current = curDriveMode->maxCurrent * curControlState.throttle;
-        if(curSpeedKmh >= curDriveMode->maxSpeed*0.8){
+        if(curSpeedKmh >= curDriveMode->maxSpeed*0.85){
             // Current is only reduced when exceeding limit. TODO Tune this
             double lastSpeedPv = speedPv;
             speedPv = curDriveMode->maxSpeed-curSpeedKmh;

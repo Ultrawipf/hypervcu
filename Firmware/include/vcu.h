@@ -72,8 +72,8 @@ class VCU{
         uint8_t indr = false;
         // fx counters?
 
-        uint8_t indicatorPeriod = 500 / interval;
-        uint8_t indicatorCounter = 0;
+        uint8_t indicatorPeriod = 333 / interval;
+        uint32_t indicatorCounter = 0;
     };
 
     struct DriveMode{
