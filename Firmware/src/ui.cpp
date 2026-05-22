@@ -179,15 +179,12 @@ void WEBGUI::switchCall(Control* sender, int value)
 
 void WEBGUI::enterWifiDetailsCallback(Control *sender, int type) {
 	if(type == B_UP) {
-		// Serial.println("Saving credentials to NVS...");
-		// Serial.println(ESPUI.getControl(wifi_ssid_text)->value);
-		// Serial.println(ESPUI.getControl(wifi_pass_text)->value);
 		bool nvsok;
         nvsok = NVS.setString(nvskey_SSID,ESPUI.getControl(wifi_ssid_text)->value,false);
         nvsok = NVS.setString(nvskey_WIFIPASS,ESPUI.getControl(wifi_pass_text)->value,false);
         nvsok = NVS.setString(nvskey_APPASS,ESPUI.getControl(wifi_ap_pass_text)->value,false);
         nvsok = NVS.setString(nvskey_APSSID,ESPUI.getControl(wifi_ap_ssid_text)->value,false);
-        nvsok = NVS.setInt(nvskey_APHIDDEN,hiddenAp ? 1:0);
+        nvsok = NVS.setInt(nvskey_APHIDDEN,static_cast<int64_t>(hiddenAp ? 1:0));
         nvsok = NVS.commit();
         if(nvsok){
             ESPUI.getControl(saveWifiBtn)->color = ControlColor::Emerald;
@@ -329,12 +326,12 @@ void WEBGUI::setup(VCU* vcu)
 	    ESPUI.addControl(Max, "", "2000", None, item);
     }
 
-    uint16_t wheelMM = ESPUI.addControl(Number, "Wheel diameter (mm)", String(vcu->getWheelDiam()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->calcSpeedScale(max(0.0f,sender->value.toFloat()),vcu->getMotorPoles());});
+    uint16_t wheelMM = ESPUI.addControl(Number, "Wheel diameter (mm)", String(vcu->getWheelDiam()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->updateSpeedScale(max(0.0f,sender->value.toFloat()),vcu->getMotorPoles());});
     ESPUI.addControl(Min, "", "10", None, wheelMM);
     ESPUI.addControl(Max, "", "10000", None, wheelMM);
-    uint16_t motorPoles = ESPUI.addControl(Number, "Motor poles", String(vcu->getMotorPoles()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->calcSpeedScale(vcu->getWheelDiam(),max<int>(1,sender->value.toInt()));});
-    ESPUI.addControl(Min, "", "1", None, wheelMM);
-    ESPUI.addControl(Max, "", "100", None, wheelMM);
+    uint16_t motorPoles = ESPUI.addControl(Number, "Motor poles", String(vcu->getMotorPoles()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->updateSpeedScale(vcu->getWheelDiam(),max<int>(1,sender->value.toInt()));});
+    ESPUI.addControl(Min, "", "1", None, motorPoles);
+    ESPUI.addControl(Max, "", "100", None, motorPoles);
     
     ESPUI.addControl(ControlType::Separator, "Drive modes. Make sure not to exceed limits of VESC or Hardware", "", ControlColor::None, tabModes);
     uint16_t brakeregenNum = ESPUI.addControl(Number, "Brake regen current A", String(vcu->brakeCurrent), ControlColor::Carrot, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->brakeCurrent = max(0.0f,sender->value.toFloat());});

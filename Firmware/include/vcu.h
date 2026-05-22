@@ -57,6 +57,7 @@ protected:
 
 
 class VCU{
+public:
     static constexpr TickType_t interval = 10;
     struct LightEffect{ // todo general effects
         uint8_t counter = 0;
@@ -83,7 +84,7 @@ class VCU{
         // float maxAccel = 0;
         // float curveScale = 0;
     };
-public:
+
     VCU(VehicleControls& controls,FingerprintReader* fingerprint = nullptr);
     // ~VCU();
     static TaskHandle_t* taskHandle;
@@ -98,7 +99,7 @@ public:
     void updateDisplayState();
     // void setLights();
     void updateMotor();
-    float calcSpeedScale(float wheelDiam,int poles);
+    float updateSpeedScale(float wheelDiam,int poles);
     void updateBrakeCurrent(float targetCurrent);
     void updateCurrent(float current);
 

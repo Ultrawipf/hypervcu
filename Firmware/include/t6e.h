@@ -17,6 +17,8 @@ public:
     void updateControls();
     char calcChecksum(char* buf,size_t len);
 
+    // int getInterval() override;
+
 protected:
     void task(void * pvParameters) override;
 
@@ -24,6 +26,7 @@ private:
     char rxbuf[40];
     char txbuf[20];
     uint8_t timeoutcount = 0;
+    const int interval = 50;
 };
 
 #endif

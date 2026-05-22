@@ -92,15 +92,23 @@ void T6E::updateControls(){
 
 void T6E::task(void * pvParameters){
     while(1){
-        delay(50);
+        delay(interval);
         updateControls();
         sendState();
     }
 }
 
+// int T6E::getInterval(){
+//     return interval;
+// }
+
 
 VehicleControls::ControlState T6E::getControls(){
-    
+    // TODO: Interpolate Throttle
+    // float prevTh = currentControls.throttleRaw;
+    // float steps = VCU::interval / this->interval;
+    // float diffTh = prevTh - currentControls.throttle;
+    // currentControls.throttle = currentControls.throttleRaw;
     return currentControls;
 }
 

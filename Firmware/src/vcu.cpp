@@ -67,9 +67,9 @@ void VCU::loadSettings(){
     brakeCurrent = NVS.getFloat(nvsKey_brakecurrent,brakeCurrent);
     brakeRamp = NVS.getFloat(nvsKey_brakeRamp,brakeRamp);
     wheelDiamMM = NVS.getFloat(nvsKey_wheelDiam,wheelDiamMM);
-    poles = NVS.getFloat(nvsKey_motorpoles,poles);
+    poles = NVS.getInt(nvsKey_motorpoles,poles);
 
-    rpmToKmh = calcSpeedScale(wheelDiamMM,poles);
+    rpmToKmh = updateSpeedScale(wheelDiamMM,poles);
 }
 
 void VCU::task(void * pvParameters){
@@ -81,7 +81,7 @@ void VCU::task(void * pvParameters){
         delay(50);
     }
     setLocked(fingerprint->getConnected()); // Only set locked if fingerprint reader available. Should probably have a UI setting....
-    rpmToKmh = calcSpeedScale(wheelDiamMM,poles);
+    rpmToKmh = updateSpeedScale(wheelDiamMM,poles);
 
     running = true;
 
@@ -159,7 +159,7 @@ void VCU::task(void * pvParameters){
         }else{
             controls.currentDisplay.errors |= VCUERR_VESCNOK;
         }
-        if(vesc.data.tempMosfet > 80 || vesc.data.tempMotor > 70){
+        if(vesc.data.tempMosfet > 80 || vesc.data.tempMotor > 80){
             controls.currentDisplay.errors |= VCUERR_VESCTEMP;
         }
         if(locked){
@@ -229,8 +229,11 @@ void VCU::setupVesc(){
 
 }
 
-float VCU::calcSpeedScale(float wheelDiamMM,int poles){
-    return ((wheelDiamMM/10)*0.001885f) / (poles / 2);
+float VCU::updateSpeedScale(float wheelDiamMM,int poles){
+    this->wheelDiamMM = wheelDiamMM;
+    this->poles = poles;
+    this->rpmToKmh = ((wheelDiamMM/10)*0.001885f) / (poles / 2);
+    return this->rpmToKmh;
 }
 
 void VCU::updateMotor(){
