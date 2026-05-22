@@ -123,37 +123,54 @@ class ClientCallbacks : public NimBLEClientCallbacks {
     }
 } clientCallbacks;
 
+static NimBLEAddress bestBmsAddr;
+static int           bestBmsRssi = -128;
+
 class ScanCallbacks : public NimBLEScanCallbacks {
     void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override {
-        // DBG_SERIAL.printf("Advertised Device found: %s\n", advertisedDevice->toString().c_str());
-        //if (advertisedDevice->haveName() && advertisedDevice->getName() == "NimBLE-Server") {
         if (advertisedDevice->isAdvertisingService(NimBLEUUID(serviceUUID_BMS))) {
-            DBG_SERIAL.printf("Found BMS Device\n");
-
-            /** Async connections can be made directly in the scan callbacks */
-            auto pClient = NimBLEDevice::getDisconnectedClient();
-            if (!pClient) {
-                pClient = NimBLEDevice::createClient(advertisedDevice->getAddress());
-                if (!pClient) {
-                    DBG_SERIAL.printf("Failed to create client\n");
-                    return;
-                }
-            }
-            bmsClientAddr = pClient->getPeerAddress();
-
-            pClient->setClientCallbacks(&clientCallbacks, false);
-            if (!pClient->connect(true, true, false)) { // delete attributes, async connect, no MTU exchange
-                NimBLEDevice::deleteClient(pClient);
-                DBG_SERIAL.printf("Failed to connect\n");
-                return;
+            int rssi = advertisedDevice->getRSSI();
+            DBG_SERIAL.printf("Found BMS: %s RSSI: %d\n",
+                advertisedDevice->getAddress().toString().c_str(), rssi);
+            if (rssi > bestBmsRssi) {
+                bestBmsRssi = rssi;
+                bestBmsAddr = advertisedDevice->getAddress();
             }
         }
     }
 
     void onScanEnd(const NimBLEScanResults& results, int reason) override {
         DBG_SERIAL.printf("Scan Ended\n");
-        if(bmsClientAddr.isNull()) // Restart
+        if (!bestBmsAddr.isNull()) {
+            DBG_SERIAL.printf("Connecting to best BMS: %s (RSSI: %d)\n",
+                bestBmsAddr.toString().c_str(), bestBmsRssi);
+
+            NimBLEClient* pClient = NimBLEDevice::getClientByPeerAddress(bestBmsAddr);
+            if (!pClient) {
+                pClient = NimBLEDevice::createClient(bestBmsAddr);
+            }
+
+            bestBmsAddr = NimBLEAddress();
+            bestBmsRssi = -128;
+
+            if (!pClient) {
+                DBG_SERIAL.printf("Failed to create client\n");
+                NimBLEDevice::getScan()->start(scanTimeMs);
+                return;
+            }
+
+            bmsClientAddr = pClient->getPeerAddress();
+            pClient->setClientCallbacks(&clientCallbacks, false);
+
+            if (!pClient->connect(true, true, false)) {
+                NimBLEDevice::deleteClient(pClient);
+                bmsClientAddr = NimBLEAddress();
+                DBG_SERIAL.printf("Failed to connect\n");
+                NimBLEDevice::getScan()->start(scanTimeMs);
+            }
+        } else if (bmsClientAddr.isNull()) {
             NimBLEDevice::getScan()->start(scanTimeMs);
+        }
     }
 } scanCallbacks;
 
