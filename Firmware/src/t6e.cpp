@@ -5,6 +5,8 @@ T6E::T6E(BMS& bms) : bms(bms){
     instance = this;
 }
 
+
+
 bool T6E::setup(){
     DISP_SERIAL.begin(9600);
     Serial.println("Starting T6E");
@@ -41,8 +43,8 @@ char T6E::calcChecksum(char* buf,size_t len){
  */
 void T6E::parseControls(char* buf){
     ControlState controls;
-    controls.connected = true;
     controls.brake = !digitalRead(BRAKE_N);
+    controls.connected = true;
     controls.throttle = (buf[17] | buf[16] << 8) / 1000.0f;
     controls.indicators = buf[18];
     controls.light = buf[5] & 0x20 ? 1 : 0;
@@ -81,6 +83,10 @@ void T6E::updateControls(){
             }
             Serial.println(printbuf);
         }
+    }
+    else{
+        // Serial.print(DISP_SERIAL.available());
+        // Serial.println(DISP_SERIAL.peek());
     }
     if(timeoutcount > 20){ // 2s
         if(currentControls.connected)
