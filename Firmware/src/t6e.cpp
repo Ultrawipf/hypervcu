@@ -84,10 +84,7 @@ void T6E::updateControls(){
             Serial.println(printbuf);
         }
     }
-    else{
-        // Serial.print(DISP_SERIAL.available());
-        // Serial.println(DISP_SERIAL.peek());
-    }
+
     if(timeoutcount > 20){ // 2s
         if(currentControls.connected)
             currentControls = ControlState(); // Safe default

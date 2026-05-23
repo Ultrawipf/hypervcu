@@ -251,7 +251,6 @@ void VCU::updateMotor(){
         return;
     }else if(lastControlState.brake && !curControlState.brake){
         updateBrakeCurrent(0); // Do not brake
-        return;
     }
     // Drive
     if(curDriveMode->currentMode){
@@ -316,15 +315,13 @@ void VCU::updateBrakeCurrent(float targetCurrent){
         curBrakeA = 0;
     }else{
         if(brakeRamp > 0){
-            curBrakeA = min(targetCurrent,curBrakeA + (brakeRamp*(interval/1000.0f)));
+            curBrakeA = min(targetCurrent,curBrakeA + (brakeRamp*((float)interval/1000.0f)));
         }else{
             curBrakeA = targetCurrent;
         }
     }
     
-    if(curBrakeA != lastBrake){
-        vesc.setBrakeCurrent(curBrakeA);
-    }
+    vesc.setBrakeCurrent(curBrakeA);
 }
 
 void VCU::updateCurrent(float current){
