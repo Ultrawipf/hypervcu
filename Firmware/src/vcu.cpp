@@ -134,9 +134,9 @@ void VCU::task(void * pvParameters){
 
         if(newControls.brake && curSpeedKmh < minspeed){
             // Quick Full throttle pull while standing and holding brake
-            if(curControlState.throttle < 0.9 && newControls.throttle == 1.0){
+            if(curControlState.throttleRaw < 0.9 && newControls.throttleRaw == 1.0){
                 zerostartWait = true;
-            }else if(curControlState.throttle > 0.1 && newControls.throttle == 0 && zerostartWait){
+            }else if(curControlState.throttleRaw > 0.1 && newControls.throttleRaw == 0 && zerostartWait){
                 zerostartWait = false;
                 zerostart = !zerostart;
             }
@@ -256,14 +256,16 @@ void VCU::updateMotor(){
     if(curDriveMode->currentMode){
         // Current control mode
         current = curDriveMode->maxCurrent * curControlState.throttle;
-        if(curSpeedKmh >= curDriveMode->maxSpeed*0.85){
-            // Current is only reduced when exceeding limit. TODO Tune this
+        if(curSpeedKmh >= curDriveMode->maxSpeed*speedLimBegin){
             double lastSpeedPv = speedPv;
             speedPv = curDriveMode->maxSpeed-curSpeedKmh;
             speedDv = speedPv-lastSpeedPv;
             speedIv += speedPv;
             speedIv = max(speedIlimneg,min(speedIlim,speedIv)); // Limit
-            current = min<float>(current,(speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale);
+            float speedLimCurrent = (speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale;
+            float fadeT = min<float>(1.0f, (curSpeedKmh - curDriveMode->maxSpeed*speedLimBegin) / (curDriveMode->maxSpeed*(speedLimEnd-speedLimBegin)));
+            float fadedCurrent = current*(1.0f-fadeT) + speedLimCurrent*fadeT;
+            current = min<float>(current, fadedCurrent);
         }
 
         // vesc.setCurrent(current);

@@ -26,7 +26,8 @@ public:
     };
 
     struct ControlState{
-        float throttle = 0; // Range 0 - 1.0
+        float throttle = 0;    // Range 0 - 1.0, interpolated
+        float throttleRaw = 0; // Range 0 - 1.0, last parsed value
         uint8_t mode = 0;
         uint8_t specialmode = 0; // walk mode
         uint8_t indicators = 0;
@@ -207,6 +208,9 @@ protected:
     float curSpeedKmh = 0;
 
     bool zerostartWait = false;
+
+    const float speedLimBegin = 0.80;
+    const float speedLimEnd = 0.95;
 };
 
 

@@ -27,6 +27,7 @@ private:
     char txbuf[20];
     uint8_t timeoutcount = 0;
     const int interval = 50;
+    float throttleSmooth = 0.3f; // Interpolation factor per getControls() call (0=no smoothing, 1=instant)
 };
 
 #endif

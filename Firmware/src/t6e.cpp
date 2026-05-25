@@ -45,7 +45,8 @@ void T6E::parseControls(char* buf){
     ControlState controls;
     controls.brake = !digitalRead(BRAKE_N);
     controls.connected = true;
-    controls.throttle = (buf[17] | buf[16] << 8) / 1000.0f;
+    controls.throttleRaw = (buf[17] | buf[16] << 8) / 1000.0f;
+    controls.throttle = currentControls.throttle; // preserve interpolated value
     controls.indicators = buf[18];
     controls.light = buf[5] & 0x20 ? 1 : 0;
     switch(buf[4]){
@@ -107,11 +108,7 @@ void T6E::task(void * pvParameters){
 
 
 VehicleControls::ControlState T6E::getControls(){
-    // TODO: Interpolate Throttle
-    // float prevTh = currentControls.throttleRaw;
-    // float steps = VCU::interval / this->interval;
-    // float diffTh = prevTh - currentControls.throttle;
-    // currentControls.throttle = currentControls.throttleRaw;
+    currentControls.throttle += (currentControls.throttleRaw - currentControls.throttle) * throttleSmooth;
     return currentControls;
 }
 
