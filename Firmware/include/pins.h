@@ -7,8 +7,10 @@
 
 #define FP_TOUCH 6
 #define FP_PWR_EN 7
-#define FP_RX 15
-#define FP_TX 16
+
+// Info: V1.1 RX was 15, TX 16. Swapped  in V1.2+
+#define FP_RX 16
+#define FP_TX 15
 #define FP_UARTNUM 2
 #define FP_SERIAL Serial2
 

@@ -137,7 +137,7 @@ public:
     float minspeed = 2.0f; // Min non-zerostart speed. Also considered idle when below this speed. 
     float minspeedAlarm = 0.5f; // When locked flash indicators if pushed faster than this speed
     float curBrakeA = 0;
-    float brakeRamp = 5; // in A/s
+    float brakeRamp = 15; // in A/s
     float curCurrent = 0;
 
     const uint8_t currentSmoothing = 1; // Average this many old samples into the new current when ramping up only
