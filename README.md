@@ -55,3 +55,55 @@ TODO:::
 ![Drive page](doc/img/drivepage.png)
 ![Mode page](doc/img/modepage.png)
 ![System page](doc/img/syspage.png)
+
+
+### T6E Protocol
+From Controller to Display
+Byte|IDLE| Info | Note
+-|-|-|-
+0|0x02|start| 
+1|0x14|start2?| 
+2|0x03|start3?| 
+3|0x00| | 
+4|0x00|0x20  “!” symbol|
+5|0x80|Brake|Brake 0xA0
+6|0x00||
+7|0x00||
+8|0x00|speed high|
+9|0x00|speed low in 0.1kmh|0-99kmh
+10|0x00|Battery in %|
+11|0x00||
+12|0x1E ||
+13|0x00|errors|
+14|0x00||
+15|0x00||
+16|0x00||
+17|0x00||
+18|0x00|Blinker pins|0x1 left, 0x2 right
+19||CRC|
+
+From Display to Controller (5V)
+
+Byte|IDLE| Info | Note
+-|-|-|-
+0|0x01||
+1|0x14||
+2|0x03||
+3|0x00||
+4|0x00|Speed mode 0|Mode 1 = 5, Mode 2 = 10, Mode 3 = 15
+5|C0|Flags|Walk 225, Headlight 224
+6|0x00||
+7|0x00||
+8|0x00||
+9|0x00||
+10|0x00||
+11|0x00||
+12|0x14||
+13|0x1E||
+14|0x00||
+15|0x00||
+16|0x00||
+17|0x00|throttle|
+18|0x00|throttle|Maxval 1000
+19|0x00|Blinker/Pin status|0x1 left, 0x2 right
+20||CRC|
