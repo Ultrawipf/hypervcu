@@ -256,13 +256,16 @@ void VCU::updateMotor(){
     if(curDriveMode->currentMode){
         // Current control mode
         current = curDriveMode->maxCurrent * curControlState.throttle;
+        static float speedLimCurrent; // Store last limited current
         if(curSpeedKmh >= curDriveMode->maxSpeed*speedLimBegin){
             double lastSpeedPv = speedPv;
             speedPv = curDriveMode->maxSpeed-curSpeedKmh;
             speedDv = speedPv-lastSpeedPv;
-            speedIv += speedPv;
+            if(speedLimCurrent < current || speedPv < 0){ // Only update I if less than demanded current
+                speedIv += speedPv;
+            }
             speedIv = max(speedIlimneg,min(speedIlim,speedIv)); // Limit
-            float speedLimCurrent = (speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale;
+            speedLimCurrent = (speedPv * speedP + speedIv * speedI + speedDv * speedD)*speedPIDscale;
             float fadeT = min<float>(1.0f, (curSpeedKmh - curDriveMode->maxSpeed*speedLimBegin) / (curDriveMode->maxSpeed*(speedLimEnd-speedLimBegin)));
             float fadedCurrent = current*(1.0f-fadeT) + speedLimCurrent*fadeT;
             current = min<float>(current, fadedCurrent);
