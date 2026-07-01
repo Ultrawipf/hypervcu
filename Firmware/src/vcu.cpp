@@ -82,7 +82,7 @@ void VCU::task(void * pvParameters){
     while(fingerprint && !fingerprint->getReady()){
         delay(50);
     }
-    setLocked(fingerprint->getConnected()); // Only set locked if fingerprint reader available. Should probably have a UI setting....
+    setLocked(fingerprint && fingerprint->getConnected()); // Only set locked if fingerprint reader available. Should probably have a UI setting....
     rpmToKmh = updateSpeedScale(wheelDiamMM,poles);
 
     running = true;
@@ -129,7 +129,7 @@ void VCU::task(void * pvParameters){
 
         // If exiting pedestrian mode and no fingerprint unlock
         if(newControls.brake && curControlState.specialmode && !newControls.specialmode){
-            if(!fingerprint->getConnected()){
+            if(!fingerprint || !fingerprint->getConnected()){
                 fpCb(1); // Force master finger
             }
         }
@@ -171,6 +171,9 @@ void VCU::task(void * pvParameters){
 }
 
 void VCU::updateDriveMode(VehicleControls::ControlState& newControls,uint8_t submode){
+    if(newControls.mode == 0){
+        return; // Should never be possible
+    }
     changeDriveMode(&driveModes[submode][newControls.mode-1]);
 }
 
@@ -346,7 +349,7 @@ void VCU::updateCurrent(float current){
 }
 
 void VCU::updateDisplayState(){
-    
+    if(!curDriveMode) return;
     controls.currentDisplay.batterypct = curBmsdata.CapacityRemainPercent;
     controls.currentDisplay.light = curLightState.front;
     controls.currentDisplay.speedkmh = curSpeedKmh; // get from vesc
