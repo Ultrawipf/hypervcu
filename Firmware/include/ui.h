@@ -32,7 +32,7 @@ protected:
     static bool hiddenAp;
     static uint16_t fpSlotSelect,fpStatLabel,batCellsLabel,wifi_ssid_text, wifi_pass_text,wifi_ap_ssid_text,wifi_ap_pass_text,switchHiddenSSID,saveWifiBtn,status,batLabel;
     static uint16_t tuninglabel,controlsLabel,saveControlBtn,vesclabel;
-    static uint16_t drivemodeUi[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES][3];
+    static uint16_t drivemodeUi[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES][4];
     static VCU* vcu;
     static uint8_t clearFpCount;
     static String drivemodeNames[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES];

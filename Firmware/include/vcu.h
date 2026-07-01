@@ -82,6 +82,7 @@ public:
         float maxCurrent;
         float maxSpeed;
         bool currentMode;
+        bool zeroStart; // Zerostart active immediately
         // float maxAccel = 0;
         // float curveScale = 0;
     };
@@ -133,7 +134,7 @@ public:
     static constexpr uint8_t NUMDRIVESUBMODES = 2;
 
     bool masterMode = false;
-    bool zerostart = false;
+    bool zerostart = false; // Zerostart override
     float minspeed = 2.0f; // Min non-zerostart speed. Also considered idle when below this speed. 
     float minspeedAlarm = 0.5f; // When locked flash indicators if pushed faster than this speed
     float curBrakeA = 0;
@@ -148,34 +149,40 @@ public:
             {
                 .maxCurrent = 20,
                 .maxSpeed = 10,
-                .currentMode = false
+                .currentMode = false,
+                .zeroStart = false
             },
             {
                 .maxCurrent = 30,
                 .maxSpeed = 15,
-                .currentMode = false
+                .currentMode = false,
+                .zeroStart = false
             },
             {
                 .maxCurrent = 35,
                 .maxSpeed = 21,
-                .currentMode = false
+                .currentMode = false,
+                .zeroStart = false
             }
         },
         {
             {
                 .maxCurrent = 20,
                 .maxSpeed = 21,
-                .currentMode = true
+                .currentMode = true,
+                .zeroStart = true
             },
             {
                 .maxCurrent = 35,
                 .maxSpeed = 21,
-                .currentMode = true
+                .currentMode = true,
+                .zeroStart = true
             },
             {
                 .maxCurrent = 40,
                 .maxSpeed = 40,
-                .currentMode = true
+                .currentMode = true,
+                .zeroStart = true
             }
         }
     };

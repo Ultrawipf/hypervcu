@@ -37,6 +37,7 @@ void VCU::saveSettings(){
             NVS.setFloat(nvsKeys_Modes[m][i][0],driveModes[m][i].maxCurrent,false);
             NVS.setFloat(nvsKeys_Modes[m][i][1],driveModes[m][i].maxSpeed,false);
             uint16_t modeSetting = driveModes[m][i].currentMode ? 1 : 0;
+            modeSetting |= driveModes[m][i].zeroStart ? 0b10 : 0;
             NVS.setInt(nvsKeys_Modes[m][i][2],modeSetting,false);
         }
     }
@@ -56,8 +57,9 @@ void VCU::loadSettings(){
         for(uint8_t i = 0;i<NUMDRIVEMODES;i++){
             driveModes[m][i].maxCurrent = NVS.getFloat(nvsKeys_Modes[m][i][0],driveModes[m][i].maxCurrent);
             driveModes[m][i].maxSpeed = NVS.getFloat(nvsKeys_Modes[m][i][1],driveModes[m][i].maxSpeed);
-            uint16_t modeSetting = driveModes[m][i].currentMode ? 1 : 0;
-            modeSetting = NVS.getInt(nvsKeys_Modes[m][i][2],modeSetting);
+            uint16_t modeSetting = NVS.getInt(nvsKeys_Modes[m][i][2],modeSetting);
+            driveModes[m][i].currentMode = (modeSetting & 0b1) != 0;
+             driveModes[m][i].zeroStart = (modeSetting & 0b10) != 0;
         }
     }
     speedP = NVS.getFloat(nvsKey_P,speedP);
@@ -241,7 +243,7 @@ void VCU::updateMotor(){
         vesc.setBrakeCurrent(lockCurrent);
         return;
     }
-    if(!curControlState.connected || curControlState.mode == 0 || curDriveMode == nullptr || ((!zerostart && !curDriveMode->currentMode) && (curSpeedKmh < minspeed))){
+    if(!curControlState.connected || curControlState.mode == 0 || curDriveMode == nullptr || ((!zerostart && !curDriveMode->zeroStart) && (curSpeedKmh < minspeed))){
         vesc.setCurrent(0);
         return;
     }
@@ -349,7 +351,7 @@ void VCU::updateDisplayState(){
     controls.currentDisplay.light = curLightState.front;
     controls.currentDisplay.speedkmh = curSpeedKmh; // get from vesc
     controls.currentDisplay.indicators = (curLightState.indl & 0x1) | ((curLightState.indr & 0x1) << 1);
-    controls.currentDisplay.warning = masterMode || (zerostart && (curSpeedKmh < minspeed));
+    controls.currentDisplay.warning = masterMode || ((zerostart || curDriveMode->zeroStart) && (curSpeedKmh < minspeed));
 }
 
 void VCU::updateLights(){

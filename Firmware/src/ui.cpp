@@ -24,7 +24,7 @@ char controlStr[tempStrLen];
 uint16_t WEBGUI::wifi_ssid_text,WEBGUI::batCellsLabel, WEBGUI::wifi_pass_text,WEBGUI::wifi_ap_pass_text,WEBGUI::wifi_ap_ssid_text;
 uint16_t WEBGUI::fpStatLabel,WEBGUI::fpSlotSelect;
 uint16_t WEBGUI::saveControlBtn,WEBGUI::tuninglabel,WEBGUI::controlsLabel,WEBGUI::vesclabel;
-uint16_t WEBGUI::drivemodeUi[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES][3];
+uint16_t WEBGUI::drivemodeUi[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES][4];
 String WEBGUI::drivemodeNames[VCU::NUMDRIVESUBMODES][VCU::NUMDRIVEMODES];
 uint16_t WEBGUI::switchHiddenSSID;
 uint16_t WEBGUI::saveWifiBtn;
@@ -349,9 +349,11 @@ void WEBGUI::setup(VCU* vcu)
         for(uint8_t i = 0;i<VCU::NUMDRIVEMODES;i++){
             drivemodeNames[m][i] = ("Drive mode: ") + String(i) + (m == 1 ? " (Master)" : " (Normal)"); // Save string static
             ESPUI.addControl(ControlType::Separator, drivemodeNames[m][i].c_str(), "", ControlColor::None, tabModes);
-            drivemodeUi[m][i][0] = speedControlP = ESPUI.addControl(Number, "Max current A", String(vcu->driveModes[m][i].maxCurrent), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==N_VALUE) vcu->driveModes[m][i].maxCurrent = sender->value.toFloat();});
-            drivemodeUi[m][i][1] = speedControlP = ESPUI.addControl(Number, "Max speed kmh", String(vcu->driveModes[m][i].maxSpeed), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==N_VALUE) vcu->driveModes[m][i].maxSpeed = sender->value.toFloat();});
-            drivemodeUi[m][i][2] = speedControlP = ESPUI.addControl(Switcher, "Current throttle mode\n(Off = speed control)", (vcu->driveModes[m][i].currentMode ? "1" : "0"), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==S_VALUE) vcu->driveModes[m][i].maxSpeed = sender->value.toInt() != 0;});
+            drivemodeUi[m][i][0] = ESPUI.addControl(Number, "Max current A", String(vcu->driveModes[m][i].maxCurrent), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==N_VALUE) vcu->driveModes[m][i].maxCurrent = sender->value.toFloat();});
+            drivemodeUi[m][i][1] = ESPUI.addControl(Number, "Max speed kmh", String(vcu->driveModes[m][i].maxSpeed), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){if(t==N_VALUE) vcu->driveModes[m][i].maxSpeed = sender->value.toFloat();});
+            drivemodeUi[m][i][2] = ESPUI.addControl(Switcher, "Current throttle mode\n(Off = speed control)", (vcu->driveModes[m][i].currentMode ? "1" : "0"), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){vcu->driveModes[m][i].currentMode = t == S_ACTIVE;});
+            drivemodeUi[m][i][3] = ESPUI.addControl(Switcher, "Override zerostart", (vcu->driveModes[m][i].zeroStart ? "1" : "0"), Wetasphalt, tabModes, [vcu,m,i](Control *sender, int t){vcu->driveModes[m][i].zeroStart = t == S_ACTIVE ;});
+
             ESPUI.addControl(Min, "", "0", None, drivemodeUi[m][i][0]);
 	        ESPUI.addControl(Max, "", "100", None, drivemodeUi[m][i][0]);
             ESPUI.addControl(Min, "", "0", None, drivemodeUi[m][i][1]);
