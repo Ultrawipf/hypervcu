@@ -211,7 +211,8 @@ protected:
     float rpmToKmh = 0;
 
     const uint8_t vescValUpdInterval = 0; // 0 always update, 1, half rate...
-    uint8_t vescValUpdCnt = 0;
+    const uint8_t vescKeepaliveInterval = 100;
+    uint8_t vescValUpdCnt = 0, vescKeepaliveCnt = 0;
     float curSpeedKmh = 0;
 
     bool zerostartWait = false;

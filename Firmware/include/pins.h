@@ -1,7 +1,7 @@
 #ifndef pins_H_
 #define pins_H_
 
-#define VERSIONSTR "0.1.4"
+#define VERSIONSTR "0.1.5"
 
 #define DBG_SERIAL Serial
 

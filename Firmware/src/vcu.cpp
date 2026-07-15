@@ -57,9 +57,11 @@ void VCU::loadSettings(){
         for(uint8_t i = 0;i<NUMDRIVEMODES;i++){
             driveModes[m][i].maxCurrent = NVS.getFloat(nvsKeys_Modes[m][i][0],driveModes[m][i].maxCurrent);
             driveModes[m][i].maxSpeed = NVS.getFloat(nvsKeys_Modes[m][i][1],driveModes[m][i].maxSpeed);
-            uint16_t modeSetting = NVS.getInt(nvsKeys_Modes[m][i][2],modeSetting);
-            driveModes[m][i].currentMode = (modeSetting & 0b1) != 0;
-             driveModes[m][i].zeroStart = (modeSetting & 0b10) != 0;
+            uint16_t modeSetting = NVS.getInt(nvsKeys_Modes[m][i][2],-1);
+            if(modeSetting != -1){
+                driveModes[m][i].currentMode = (modeSetting & 0b1) != 0;
+                driveModes[m][i].zeroStart = (modeSetting & 0b10) != 0;
+            }            
         }
     }
     speedP = NVS.getFloat(nvsKey_P,speedP);
@@ -96,8 +98,9 @@ void VCU::task(void * pvParameters){
         if(vescOn){
             
             if(vescValUpdCnt++ > vescValUpdInterval){
-                if(newControls.connected){
-                    // vesc.sendKeepalive();
+                if(newControls.connected && (vescKeepaliveCnt++ > vescKeepaliveInterval)){
+                    vesc.sendKeepalive();
+                    vescKeepaliveCnt = 0;
                 }
                 vescValUpdCnt = 0;
                 vescOk = vesc.getVescValues(); // Update values
