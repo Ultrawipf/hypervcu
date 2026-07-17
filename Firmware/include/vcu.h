@@ -124,7 +124,7 @@ public:
     float speedPIDscale = 0.01;
     float lastSpeed = 0;
     float lastCurrent = 0; // Previous requested motor current
-    float speedP = 130, speedI = 2, speedD = 50;
+    float speedP = 160, speedI = 2, speedD = 50;
     double speedPv = 0, speedIv = 0, speedDv = 0;
     double speedIlim = 500,speedIlimneg = -100;
 
@@ -179,7 +179,7 @@ public:
                 .zeroStart = true
             },
             {
-                .maxCurrent = 40,
+                .maxCurrent = 50,
                 .maxSpeed = 40,
                 .currentMode = true,
                 .zeroStart = true
