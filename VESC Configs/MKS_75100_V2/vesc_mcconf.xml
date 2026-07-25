@@ -126,7 +126,7 @@
     <foc_offsets_voltage_undriven__0>0</foc_offsets_voltage_undriven__0>
     <foc_offsets_voltage_undriven__1>0</foc_offsets_voltage_undriven__1>
     <foc_offsets_voltage_undriven__2>0</foc_offsets_voltage_undriven__2>
-    <foc_phase_filter_enable>1</foc_phase_filter_enable>
+    <foc_phase_filter_enable>0</foc_phase_filter_enable>
     <foc_phase_filter_disable_fault>1</foc_phase_filter_disable_fault>
     <foc_phase_filter_max_erpm>4000</foc_phase_filter_max_erpm>
     <foc_mtpa_mode>0</foc_mtpa_mode>
