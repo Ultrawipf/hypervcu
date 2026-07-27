@@ -62,9 +62,10 @@ void FingerprintReader::task(){
     while(1){
         vTaskDelay(150);
         if (!digitalRead(FP_TOUCH) && !fingerOn && (enrollstep == EnrollStep::none || enrollstep == EnrollStep::error || enrollstep == EnrollStep::success)){
-            fingerOn = true;
             fpSetPwr(true);
             vTaskDelay(100);
+            if(digitalRead(FP_TOUCH)) continue; // Abort if finger is not held long enough
+            fingerOn = true;
             fpSetLed(FINGERPRINT_LED_GRADUAL_ON,50,FINGERPRINT_LED_BLUE,2);
             xSemaphoreTake(fingerSem, portMAX_DELAY);
             lastFingerResult = checkCurFinger();

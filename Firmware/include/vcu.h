@@ -95,7 +95,7 @@ public:
     static void run();
     static void taskFuncStatic(void * pvParameters);
 
-    void setupVesc();
+    bool setupVesc();
 
     void updateLights();
     void updateDisplayState();
@@ -191,7 +191,10 @@ public:
     VehicleControls& controls;
     VescUart vesc;
     FingerprintReader* fingerprint = nullptr;
-    // mc_configuration vescconf;
+    mc_configuration mcconf; // VESC motor config
+
+    float warnTempMot = 80;
+    float warnTempMos = 80;
 
     uint8_t getMotorPoles();
     float getWheelDiam();
@@ -219,6 +222,10 @@ protected:
 
     const float speedLimBegin = 0.80;
     const float speedLimEnd = 0.95;
+
+    // Warn if the temp limit is exceeded by this margin between the start and end limits.
+    // Example: 80°C Start, 100°C end, 0.25 factor = (100-80) * 0.25 + 80 = 85°C Warning
+    const float tempWarnFactor = 0.25; 
 };
 
 

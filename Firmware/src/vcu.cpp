@@ -18,8 +18,8 @@ const String nvsKey_D = "PID_D";
 const String nvsKey_brakecurrent = "BRK_A";
 const String nvsKey_offthcurrent = "OFT_BRK_A";
 const String nvsKey_brakeRamp = "BRK_RMP";
-const String nvsKey_wheelDiam = "WHL_MM";
-const String nvsKey_motorpoles= "MT_PLS";
+// const String nvsKey_wheelDiam = "WHL_MM";
+// const String nvsKey_motorpoles= "MT_PLS";
 
 VCU::VCU(VehicleControls& controls,FingerprintReader* fingerprint)
 : controls(controls),fingerprint(fingerprint),vesc(25)
@@ -47,8 +47,8 @@ void VCU::saveSettings(){
     NVS.setFloat(nvsKey_offthcurrent,offThrottleBrake,false);
     NVS.setFloat(nvsKey_brakecurrent,brakeCurrent,false);
     NVS.setFloat(nvsKey_brakeRamp,brakeRamp,false);
-    NVS.setFloat(nvsKey_wheelDiam,wheelDiamMM,false);
-    NVS.setInt(nvsKey_motorpoles,poles,false);
+    // NVS.setFloat(nvsKey_wheelDiam,wheelDiamMM,false);
+    // NVS.setInt(nvsKey_motorpoles,poles,false);
     NVS.commit();
 }
 
@@ -70,8 +70,8 @@ void VCU::loadSettings(){
     offThrottleBrake = NVS.getFloat(nvsKey_offthcurrent,offThrottleBrake);
     brakeCurrent = NVS.getFloat(nvsKey_brakecurrent,brakeCurrent);
     brakeRamp = NVS.getFloat(nvsKey_brakeRamp,brakeRamp);
-    wheelDiamMM = NVS.getFloat(nvsKey_wheelDiam,wheelDiamMM);
-    poles = NVS.getInt(nvsKey_motorpoles,poles);
+    // wheelDiamMM = NVS.getFloat(nvsKey_wheelDiam,wheelDiamMM);
+    // poles = NVS.getInt(nvsKey_motorpoles,poles);
 
     rpmToKmh = updateSpeedScale(wheelDiamMM,poles);
 }
@@ -80,7 +80,13 @@ void VCU::task(void * pvParameters){
     // loadSettings();
     controls.setup();
     controls.run();
-    setupVesc();
+
+    VESC_SERIAL.begin(115200);
+    vesc.setSerialPort(&VESC_SERIAL);
+    while(!setupVesc()){
+        delay(500);
+    }
+
     while(fingerprint && !fingerprint->getReady()){
         delay(50);
     }
@@ -112,6 +118,9 @@ void VCU::task(void * pvParameters){
             if(vescOk){
                 vescOk = false;
                 Serial.println("Vesc disconnected");
+                // Retry
+                delay(500);
+                vescOk = setupVesc();
             }
         }
     
@@ -164,7 +173,7 @@ void VCU::task(void * pvParameters){
         }else{
             controls.currentDisplay.errors |= VCUERR_VESCNOK;
         }
-        if(vesc.data.tempMosfet > 80 || vesc.data.tempMotor > 80){
+        if(vesc.data.tempMosfet > warnTempMos || vesc.data.tempMotor > warnTempMot){
             controls.currentDisplay.errors |= VCUERR_VESCTEMP;
         }
         if(locked){
@@ -225,9 +234,8 @@ void VCU::setLocked(bool locked){
     this->locked = locked;
 }
 
-void VCU::setupVesc(){
-    VESC_SERIAL.begin(115200);
-    vesc.setSerialPort(&VESC_SERIAL);
+bool VCU::setupVesc(){
+    
     // vesc.setDebugPort(&Serial);
     vesc.setCurrent(0);
     if(VESC_EN_MODE == OUTPUT){
@@ -235,6 +243,40 @@ void VCU::setupVesc(){
     }
     //vesc.setDebugPort(&DBG_SERIAL);
 
+    // Log VESC FW version, needed to match COMM_GET_MCCONF/APPCONF wire format
+    bool gotFw = false;
+    for(uint8_t i = 0; i < 3 && !gotFw; i++){
+        gotFw = vesc.getFWversion();
+        if(!gotFw) delay(200);
+    }
+    if(gotFw){
+        Serial.print("VESC FW: ");
+        Serial.print(vesc.fw_version.major);
+        Serial.print(".");
+        Serial.println(vesc.fw_version.minor);
+    }else{
+        Serial.println("VESC FW version read failed");
+    }
+
+    // Requires VESC FW6.05+ (see VescUart::deserializeMcConf/AppConf)
+    bool gotMcConf = false;
+    for(uint8_t i = 0; i < 3 && !gotMcConf; i++){
+        gotMcConf = vesc.getMcConfig(mcconf);
+        if(!gotMcConf) delay(200);
+    }
+    Serial.println(gotMcConf ? "VESC mcconf read ok" : "VESC mcconf read failed");
+
+    if(gotMcConf){
+        // Get relevant parameters directly from vesc
+        Serial.println(mcconf.si_wheel_diameter * 1000);
+        Serial.println(mcconf.l_temp_motor_start);
+        if(mcconf.l_temp_motor_start > 0)   warnTempMot = mcconf.l_temp_motor_start + ((mcconf.l_temp_motor_end - mcconf.l_temp_motor_start) * 0.25);
+        if(mcconf.l_temp_fet_start > 0)     warnTempMos = mcconf.l_temp_fet_start + ((mcconf.l_temp_fet_end - mcconf.l_temp_fet_start) * 0.25);
+        if(mcconf.si_wheel_diameter > 0)    wheelDiamMM = mcconf.si_wheel_diameter * 1000;
+        if(mcconf.si_motor_poles > 0)       poles = mcconf.si_motor_poles;
+        
+    }
+    return gotFw;
 }
 
 float VCU::updateSpeedScale(float wheelDiamMM,int poles){

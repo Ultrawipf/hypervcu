@@ -133,8 +133,8 @@ void WEBGUI::update(){
         snprintf(controlStr,tempStrLen,"PErr: %f\nIerr: %f\nDerr: %f\nCurrent target: %fA",vcu->speedPv,vcu->speedIv,vcu->speedDv,vcu->lastCurrent);
         ESPUI.updateLabel(tuninglabel,controlStr);
         // Vesc
-        snprintf(controlStr,tempStrLen,"FET: %f°C\nMOT: %f°C\nERPM: %f\nDuty: %f\nPhase A: %f\nBat A: %fA\nVolt: %f\nFaults: %d",
-            vcu->vesc.data.tempMosfet,vcu->vesc.data.tempMotor,vcu->vesc.data.rpm,vcu->vesc.data.dutyCycleNow,vcu->vesc.data.avgMotorCurrent,vcu->vesc.data.avgInputCurrent,vcu->vesc.data.inpVoltage,(uint16_t)vcu->vesc.data.error);
+        snprintf(controlStr,tempStrLen,"FET: %f°C\nMOT: %f°C\nTemplim: %f°C\nERPM: %f\nDuty: %f\nPhase A: %f\nBat A: %fA\nVolt: %f\nFaults: %d",
+            vcu->vesc.data.tempMosfet,vcu->vesc.data.tempMotor,vcu->warnTempMot,vcu->vesc.data.rpm,vcu->vesc.data.dutyCycleNow,vcu->vesc.data.avgMotorCurrent,vcu->vesc.data.avgInputCurrent,vcu->vesc.data.inpVoltage,(uint16_t)vcu->vesc.data.error);
         ESPUI.updateLabel(vesclabel,controlStr);
 
 
@@ -326,9 +326,9 @@ void WEBGUI::setup(VCU* vcu)
 	    ESPUI.addControl(Max, "", "2000", None, item);
     }
 
-    uint16_t wheelMM = ESPUI.addControl(Number, "Wheel diameter (mm)", String(vcu->getWheelDiam()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->updateSpeedScale(max(0.0f,sender->value.toFloat()),vcu->getMotorPoles());});
-    ESPUI.addControl(Min, "", "10", None, wheelMM);
-    ESPUI.addControl(Max, "", "10000", None, wheelMM);
+    // uint16_t wheelMM = ESPUI.addControl(Number, "Wheel diameter (mm)", String(vcu->getWheelDiam()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->updateSpeedScale(max(0.0f,sender->value.toFloat()),vcu->getMotorPoles());});
+    // ESPUI.addControl(Min, "", "10", None, wheelMM);
+    // ESPUI.addControl(Max, "", "10000", None, wheelMM);
     uint16_t motorPoles = ESPUI.addControl(Number, "Motor poles", String(vcu->getMotorPoles()), ControlColor::Wetasphalt, tabModes, [vcu](Control *sender, int t){if(t==N_VALUE) vcu->updateSpeedScale(vcu->getWheelDiam(),max<int>(1,sender->value.toInt()));});
     ESPUI.addControl(Min, "", "1", None, motorPoles);
     ESPUI.addControl(Max, "", "100", None, motorPoles);
