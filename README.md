@@ -50,6 +50,27 @@ TODO:::
     1.  Enter pedestian mode (Hold drive mode "down" in any non zero drive mode)
     2.  Hold brake and exit pedestrian mode (push throttle up for example)
 
+
+### Display + Errors
+
+#### Display indicators
+Display | Meaning
+----|---
+bt n "P menu" | Motor temperature
+"!" Symbol | Zerostart or Master mode active
+Battery % | Battery %
+Speed | Speed kmh
+
+
+#### Error codes
+Errors are bit masked. Multiple can appear at once.
+Name | Code
+----|---
+VCUERR_LOCKED (Fingerprint locked) | 0x01
+VCUERR_VESCNOK (Vesc error/Disconnected) | 0x10
+VCUERR_VESCTEMP (Motor or mosfet hot) | 0x20
+
+
 ### Screenshots
 
 ![Drive page](doc/img/drivepage.png)

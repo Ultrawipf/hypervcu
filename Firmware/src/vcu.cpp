@@ -400,6 +400,8 @@ void VCU::updateDisplayState(){
     controls.currentDisplay.speedkmh = curSpeedKmh; // get from vesc
     controls.currentDisplay.indicators = (curLightState.indl & 0x1) | ((curLightState.indr & 0x1) << 1);
     controls.currentDisplay.warning = masterMode || ((zerostart || curDriveMode->zeroStart) && (curSpeedKmh < minspeed));
+    controls.currentDisplay.bt_n = round(vesc.data.tempMotor); // Show motor temperature in cycle counter
+    //controls.currentDisplay.bt_n = curBmsdata.Cycles;
 }
 
 void VCU::updateLights(){

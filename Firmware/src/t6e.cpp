@@ -23,8 +23,9 @@ void T6E::sendState(){
     tbuf[9] = (kmhScaled) & 0xff;
     tbuf[10] = currentDisplay.batterypct;
     tbuf[13] = currentDisplay.errors;
+    tbuf[15] = currentDisplay.bt_n;
     tbuf[18] = currentDisplay.indicators;
-
+    
     tbuf[19] = calcChecksum(tbuf,19);
     memcpy(txbuf,tbuf,20);
     DISP_SERIAL.write(txbuf,sizeof(txbuf));

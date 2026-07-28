@@ -23,6 +23,7 @@ public:
         uint8_t indicators;
         bool warning;
         uint8_t errors;
+        uint8_t bt_n;
     };
 
     struct ControlState{
