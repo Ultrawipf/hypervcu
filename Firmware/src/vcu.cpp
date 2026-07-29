@@ -83,9 +83,10 @@ void VCU::task(void * pvParameters){
 
     VESC_SERIAL.begin(115200);
     vesc.setSerialPort(&VESC_SERIAL);
-    while(!setupVesc()){
-        delay(500);
-    }
+    vescOk = false;
+    // while(!setupVesc()){
+    //     delay(500);
+    // }
 
     while(fingerprint && !fingerprint->getReady()){
         delay(50);
@@ -102,6 +103,12 @@ void VCU::task(void * pvParameters){
         VehicleControls::ControlState newControls = controls.getControls();
         bool vescOn = (VESC_EN_MODE == OUTPUT) ? digitalRead(VESC_EN) : true;
         if(vescOn){
+
+            if(!vescOk){
+                // Retry
+                delay(500);
+                vescOk = setupVesc();
+            }
             
             if(vescValUpdCnt++ > vescValUpdInterval){
                 if(newControls.connected && (vescKeepaliveCnt++ > vescKeepaliveInterval)){
@@ -118,9 +125,6 @@ void VCU::task(void * pvParameters){
             if(vescOk){
                 vescOk = false;
                 Serial.println("Vesc disconnected");
-                // Retry
-                delay(500);
-                vescOk = setupVesc();
             }
         }
     
@@ -276,6 +280,7 @@ bool VCU::setupVesc(){
         if(mcconf.si_motor_poles > 0)       poles = mcconf.si_motor_poles;
         
     }
+    rpmToKmh = updateSpeedScale(wheelDiamMM,poles);
     return gotFw;
 }
 
