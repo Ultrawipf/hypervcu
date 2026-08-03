@@ -260,7 +260,7 @@ void WEBGUI::setup(VCU* vcu)
         vTaskDelay(100);
         WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
         String appassnvs = NVS.getString(nvskey_APPASS,apPass);
-        String apssidnvs = NVS.getString(nvskey_APPASS,apssid);
+        String apssidnvs = NVS.getString(nvskey_APSSID,apssid);
         int apHidden = NVS.getInt(nvskey_APHIDDEN,0);
         WiFi.softAP(apssidnvs,appassnvs,11,apHidden);
 
