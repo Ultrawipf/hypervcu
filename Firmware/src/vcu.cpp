@@ -83,10 +83,10 @@ void VCU::task(void * pvParameters){
 
     VESC_SERIAL.begin(115200);
     vesc.setSerialPort(&VESC_SERIAL);
+    if(VESC_EN_MODE == OUTPUT){
+        digitalWrite(VESC_EN,1); // Enable VESC power so vescOn reads true and the loop can (re)run setupVesc()
+    }
     vescOk = false;
-    // while(!setupVesc()){
-    //     delay(500);
-    // }
 
     while(fingerprint && !fingerprint->getReady()){
         delay(50);
