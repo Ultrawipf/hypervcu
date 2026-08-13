@@ -1,0 +1,121 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*.*.*"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Compiles both envs and uploads the result as a workflow artifact. Runs for
+    # every push/PR (as a compile check), manual dispatch (to grab a build on
+    # demand), and tag pushes — the release job below reuses this job's artifact
+    # rather than rebuilding.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: Firmware
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute artifact version string
+        id: version
+        run: echo "version=$(echo "${{ github.ref_name }}" | tr '/' '-')" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Install PlatformIO and esptool
+        run: pip install --upgrade platformio "esptool>=5,<6"
+
+      - name: Build firmware (USB full + OTA)
+        run: |
+          pio run -e esp32s3_usb
+          pio run -e esp32s3_ota
+
+      - name: Generate esp32s3_usb project metadata
+        run: pio project metadata --json-output -e esp32s3_usb --json-output-path metadata.json
+
+      - name: Merge full flashable image
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          # Offsets (bootloader, partition table, boot_app0, app) come from the
+          # metadata generated above, so this stays correct if the partition
+          # scheme changes.
+          MERGE_ARGS=$(python ../.github/scripts/merge_full_bin.py esp32s3_usb metadata.json)
+
+          # flash-mode/flash-freq are read from each merged image's own header ("keep"),
+          # so we don't need to duplicate board-specific values here.
+          python -m esptool --chip esp32s3 merge-bin -o "dist/HyperVCU-${{ steps.version.outputs.version }}-full.bin" \
+            --flash-mode keep --flash-freq keep --flash-size 8MB \
+            $MERGE_ARGS
+
+      - name: Stage OTA artifact
+        run: cp .pio/build/esp32s3_ota/firmware.bin "dist/HyperVCU-${{ steps.version.outputs.version }}-ota.bin"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ steps.version.outputs.version }}
+          path: Firmware/dist/*.bin
+          retention-days: 14
+
+  release:
+    # Only for v*.*.* tags pushed on top of a commit that's on master. Reuses the
+    # build job's artifact from this same workflow run instead of rebuilding.
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on master
+        id: gate
+        run: |
+          git fetch origin master
+          if git merge-base --is-ancestor "${{ github.sha }}" origin/master; then
+            echo "on_master=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "on_master=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Tag ${{ github.ref_name }} does not point at a commit on master; skipping release."
+          fi
+
+      - name: Download build artifact
+        if: steps.gate.outputs.on_master == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ github.ref_name }}
+          path: dist
+
+      - name: Create GitHub Release
+        if: steps.gate.outputs.on_master == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dist/*.bin
