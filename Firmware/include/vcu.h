@@ -116,6 +116,7 @@ public:
     bool running = false;
     bool vescOk = false;
     bool locked = false;
+    uint32_t lastVescRetry = 0;
 
     float brakeCurrent = 0;
     float offThrottleBrake = 0;

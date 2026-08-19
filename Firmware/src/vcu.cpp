@@ -104,9 +104,9 @@ void VCU::task(void * pvParameters){
         bool vescOn = (VESC_EN_MODE == OUTPUT) ? digitalRead(VESC_EN) : true;
         if(vescOn){
 
-            if(!vescOk){
-                // Retry
-                delay(500);
+            if(!vescOk && (millis() - lastVescRetry > 500)){
+                // Retry, non-blocking so lights/display keep updating
+                lastVescRetry = millis();
                 vescOk = setupVesc();
             }
             
@@ -248,11 +248,7 @@ bool VCU::setupVesc(){
     //vesc.setDebugPort(&DBG_SERIAL);
 
     // Log VESC FW version, needed to match COMM_GET_MCCONF/APPCONF wire format
-    bool gotFw = false;
-    for(uint8_t i = 0; i < 3 && !gotFw; i++){
-        gotFw = vesc.getFWversion();
-        if(!gotFw) delay(200);
-    }
+    bool gotFw = vesc.getFWversion();
     if(gotFw){
         Serial.print("VESC FW: ");
         Serial.print(vesc.fw_version.major);
@@ -263,11 +259,7 @@ bool VCU::setupVesc(){
     }
 
     // Requires VESC FW6.05+ (see VescUart::deserializeMcConf/AppConf)
-    bool gotMcConf = false;
-    for(uint8_t i = 0; i < 3 && !gotMcConf; i++){
-        gotMcConf = vesc.getMcConfig(mcconf);
-        if(!gotMcConf) delay(200);
-    }
+    bool gotMcConf = vesc.getMcConfig(mcconf);
     Serial.println(gotMcConf ? "VESC mcconf read ok" : "VESC mcconf read failed");
 
     if(gotMcConf){
