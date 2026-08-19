@@ -399,14 +399,16 @@ void VCU::updateCurrent(float current){
 }
 
 void VCU::updateDisplayState(){
-    if(!curDriveMode) return;
+    
     controls.currentDisplay.batterypct = curBmsdata.CapacityRemainPercent;
     controls.currentDisplay.light = curLightState.front;
     controls.currentDisplay.speedkmh = curSpeedKmh; // get from vesc
     controls.currentDisplay.indicators = (curLightState.indl & 0x1) | ((curLightState.indr & 0x1) << 1);
-    controls.currentDisplay.warning = masterMode || ((zerostart || curDriveMode->zeroStart) && (curSpeedKmh < minspeed));
     controls.currentDisplay.bt_n = round(vesc.data.tempMotor); // Show motor temperature in cycle counter
     //controls.currentDisplay.bt_n = curBmsdata.Cycles;
+
+    if(!curDriveMode) return;
+    controls.currentDisplay.warning = masterMode || ((zerostart || curDriveMode->zeroStart) && (curSpeedKmh < minspeed));
 }
 
 void VCU::updateLights(){
