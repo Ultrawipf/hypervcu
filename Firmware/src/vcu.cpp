@@ -87,6 +87,7 @@ void VCU::task(void * pvParameters){
         digitalWrite(VESC_EN,1); // Enable VESC power so vescOn reads true and the loop can (re)run setupVesc()
     }
     vescOk = false;
+    lastVescRetry = millis() + 1500; // Delay init
 
     while(fingerprint && !fingerprint->getReady()){
         delay(50);
@@ -232,8 +233,10 @@ void VCU::setLocked(bool locked){
     if(locked){
         // Brake vesc
         vesc.setBrakeCurrent(lockCurrent);
+        digitalWrite(VESC_KILL,LOW); // Disable vesc
     }else{
         vesc.setBrakeCurrent(0);
+        digitalWrite(VESC_KILL,HIGH); // Unlock vesc
     }
     this->locked = locked;
 }
@@ -256,6 +259,7 @@ bool VCU::setupVesc(){
         Serial.println(vesc.fw_version.minor);
     }else{
         Serial.println("VESC FW version read failed");
+        return false;
     }
 
     // Requires VESC FW6.05+ (see VescUart::deserializeMcConf/AppConf)
@@ -273,7 +277,7 @@ bool VCU::setupVesc(){
         
     }
     rpmToKmh = updateSpeedScale(wheelDiamMM,poles);
-    return gotFw;
+    return gotFw && gotMcConf;
 }
 
 float VCU::updateSpeedScale(float wheelDiamMM,int poles){

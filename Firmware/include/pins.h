@@ -29,6 +29,7 @@
 #define VESC_SERIAL Serial0
 #define VESC_EN 38
 #define VESC_EN_MODE OUTPUT
+#define VESC_KILL 39
 
 #define DISP_TX 17
 #define DISP_RX 18

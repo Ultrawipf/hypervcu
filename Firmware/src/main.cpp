@@ -29,6 +29,7 @@ void setupPins(){
     pinMode(BRAKE_N,INPUT);
 
     pinMode(VESC_EN,VESC_EN_MODE); // Output if not directly connected to display.
+    pinMode(VESC_KILL,OUTPUT);
 
     // pinMode(FP_RX,INPUT);
     // pinMode(FP_TX,OUTPUT);

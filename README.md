@@ -25,6 +25,7 @@ Currently only supports Joyor T6E.
 
 TODO
 
+**NOTE: NEVER connect or disconnect battery power when connected to the vesc or display. Always disable the battery using the BMS app when connecting or disconnecting anything from the battery to prevent sparking or fault currents**
 
 ### Usage
 TODO
