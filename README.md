@@ -1,6 +1,6 @@
 ## Hyper VCU
 
-**INFO: This project is in early development. Many features are not yet fully implemented or tuned**
+**INFO: This project is in early development. Many features are not yet fully implemented or tuned. Use on your own risk. Not every ESC combination is guaranteed to work**
 
 ### Application
 DIY replacement vehicle controller for Joyor T6E scooters for use with VESC motor drivers and the original controls.
@@ -9,7 +9,7 @@ Currently only supports Joyor T6E.
 ### Features
 
 * Controls all lights: Front, Rear, Brake, Indicators
-* 3 Drive modes + 3 additional "master" drive modes
+* 3 Drive modes + 3 additional "master" drive modes (Adult/Child modes...)
     * Speed, Current and control mode (Throttle vs. Speed control) for every mode selectable
 * Configurable Off-throttle and Brake regen strength
 * R503 Fingerprint reader support
@@ -23,12 +23,49 @@ Currently only supports Joyor T6E.
 
 ### Connections
 
-TODO
+**NOTE: NEVER connect or disconnect battery power when connected to the vesc or display. Always disable the battery using the [JBD APP](https://play.google.com/store/apps/details?id=com.jiabaida.little_elephant) when connecting or disconnecting anything from the battery to prevent sparking or fault currents**
 
-**NOTE: NEVER connect or disconnect battery power when connected to the vesc or display. Always disable the battery using the BMS app when connecting or disconnecting anything from the battery to prevent sparking or fault currents**
+Colors of different clone Julet style connectors can differ!
+
+##### Joyor T6E pinout:
+
+Display connector male side:
+
+```
+                     U - key
+     U               1 -  48v_powon (yellow)
+ 2       1           2 -  vbat (red)
+     6               3 -  gnd (white)
+ 3       5           4 -  (green uart 5V)
+     4               5 -  (black uart 3.3V DISP RX)
+                     6 -  (blue brake low)
+```
+
+#### Enable signal
+
+Some ESCs have an enable pin on the comms connector that turns it off (after timeout) when pulled low.
+The enable pin of the HyperVCU is low when off and pulled via an optoisolator to VESC 3.3V when on to keep it enabled.
+Using this pin is optional and was tested on the MKESC 75100 V2 and MKESC 75200.
+
+If this pin is not available but the ESC has push start with timeout it will be kept enabled by a uart keepalive signal.
+
+#### Kill signal
+
+AD2 can be used as a lock/unlock signal. It behaves like the enable pin but goes high (to VESC 3.3V) only after the VCU is unlocked (via Fingerprint) and not immediately.
 
 ### Usage
-TODO
+
+#### Setup
+* Update VESC to a compatible firmware (>V6.06, V7.0 recommended)
+* Set up FOC, Hall sensors, calibration, wheel diameter (250mm), motor poles (30) in VESC tool
+* Test motor with VESC alone
+* DISABLE BMS WITH [JBD APP](https://play.google.com/store/apps/details?id=com.jiabaida.little_elephant)
+* Connect lights, fingerprint reader, display, VESC, power...
+* Connect XT60 and enable BMS again
+* Power on, connect to webinterface
+* Configure drive modes and fingerprints
+
+
 #### Access webinterface in standalone AP mode
 1. Connect to "Hyper VCU" wifi, default pw "hypervcu"
 2. Open "http://10.13.37.1" in a browser
@@ -36,9 +73,6 @@ TODO
 #### Common usage
 * Enable/Disable zero start: Hold brake, push throttle up quickly to 100% and release. "!" icon should appear
 * Zero start and master modes reset to startup behaviour when enabling drive mode 0
-
-
-TODO:::
 
 #### With fingerprint reader
 * Unlock motor: Scan any valid finger
