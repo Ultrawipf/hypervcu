@@ -61,6 +61,10 @@ void FingerprintReader::task(){
     bool fingerOn = false;
     while(1){
         vTaskDelay(150);
+        if(!isConnected){
+            vTaskDelay(500); // Do nothing for now
+            continue;
+        }
         if (!digitalRead(FP_TOUCH) && !fingerOn && (enrollstep == EnrollStep::none || enrollstep == EnrollStep::error || enrollstep == EnrollStep::success)){
             fpSetPwr(true);
             vTaskDelay(100);
