@@ -27,20 +27,43 @@ Currently only supports Joyor T6E.
 
 Colors of different clone Julet style connectors can differ!
 
-##### Joyor T6E pinout:
+#### Joyor T6E pinout:
 
-Display connector male side:
+##### Display connector male side:
 
 ```
                      U - key
-     U               1 -  48v_powon (yellow)
- 2       1           2 -  vbat (red)
-     6               3 -  gnd (white)
- 3       5           4 -  (green uart 5V)
-     4               5 -  (black uart 3.3V DISP RX)
-                     6 -  (blue brake low)
+     U               1 -  48v_powon
+ 2       1           2 -  vbat
+     6               3 -  gnd 
+ 3       5           4 -  (uart 5V)
+     4               5 -  (uart 3.3V DISP RX)
+                     6 -  (brake low)
 ```
 
+Signal | Color (Original Julet)
+-- | --
+Powon | Blue
+Vbat | Red
+GND | Black
+TX | Yellow
+RX | Green
+Brake | White
+
+##### Motor Hall
+Seen from front of motor side connector:
+```
+----()----
+1|  2|  3|
+4|  5|  6|
+----------
+1: Vcc
+2: TEMP
+3: GND
+4: H3
+5: H2
+6: H1
+```
 #### Enable signal
 
 Some ESCs have an enable pin on the comms connector that turns it off (after timeout) when pulled low.
