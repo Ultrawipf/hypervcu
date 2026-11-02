@@ -117,7 +117,7 @@ void VCU::task(void * pvParameters){
                     vescKeepaliveCnt = 0;
                 }
                 vescValUpdCnt = 0;
-                vescOk = vesc.getVescValues(); // Update values
+                vescOk &= vesc.getVescValues(); // Update values
                 lastSpeed = curSpeedKmh;
                 curSpeedKmh = abs(vesc.data.rpm * rpmToKmh); // Absolute speed
             }
@@ -262,6 +262,7 @@ bool VCU::setupVesc(){
         return false;
     }
 
+    vTaskDelay(100);
     // Requires VESC FW6.05+ (see VescUart::deserializeMcConf/AppConf)
     bool gotMcConf = vesc.getMcConfig(mcconf);
     Serial.println(gotMcConf ? "VESC mcconf read ok" : "VESC mcconf read failed");
